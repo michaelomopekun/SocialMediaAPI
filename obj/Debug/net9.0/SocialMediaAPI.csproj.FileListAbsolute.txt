@@ -1,0 +1,7 @@
+C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\obj\Debug\net9.0\SocialMediaAPI.csproj.AssemblyReference.cache
+C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\obj\Debug\net9.0\SocialMediaAPI.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\obj\Debug\net9.0\SocialMediaAPI.AssemblyInfoInputs.cache
+C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\obj\Debug\net9.0\SocialMediaAPI.AssemblyInfo.cs
+C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\obj\Debug\net9.0\SocialMediaAPI.csproj.CoreCompileInputs.cache
+C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\obj\Debug\net9.0\SocialMediaAPI.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\obj\Debug\net9.0\SocialMediaAPI.MvcApplicationPartsAssemblyInfo.cache
