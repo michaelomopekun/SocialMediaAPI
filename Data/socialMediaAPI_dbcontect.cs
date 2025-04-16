@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using SocialMediaAPI.Models.Domain;
+using SocialMediaAPI.Models.Domain.User;
 
 
 namespace SocialMediaAPI.Data;

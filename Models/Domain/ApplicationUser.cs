@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 
 
 namespace SocialMediaAPI.Models.Domain.User;
+
 public class ApplicationUser : IdentityUser
 {
     public string? FirstName { get; set; }
