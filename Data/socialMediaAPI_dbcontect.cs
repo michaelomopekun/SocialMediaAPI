@@ -25,7 +25,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasOne(u => u.User)
             .WithMany(p => p.Posts)
             .HasForeignKey(u => u.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         //Relationship configuration for Comment
         builder.Entity<Comment>()
@@ -39,21 +39,21 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasOne(P => P.Post)
             .WithMany(l => l.Likes)
             .HasForeignKey(l => l.PostId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.NoAction);
 
         //Relationship configuration for Like on Comment
         builder.Entity<Like>()
             .HasOne(c => c.Comment)
             .WithMany(l => l.Likes)
             .HasForeignKey(l => l.CommentId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.NoAction);
 
         //Relationship configuration for Like on User
         builder.Entity<Like>()
             .HasOne(u => u.User)
             .WithMany(l => l.Likes)
             .HasForeignKey(l => l.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.NoAction);
 
         //Relationship configuration for Follower
         builder.Entity<Follow>()
@@ -74,7 +74,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasOne(p => p.Post)
             .WithMany(s => s.Shares)
             .HasForeignKey(s => s.PostId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         //Relationship configuration for Share on User
         builder.Entity<Share>()
