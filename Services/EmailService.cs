@@ -1,7 +1,6 @@
 
 using MailKit.Net.Smtp;
 using MailKit.Security;
-using Microsoft.Extensions.Configuration;
 using MimeKit;
 
 public class EmailService : IEmailService
