@@ -179,3 +179,9 @@ C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\bin\Debug\
 C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\bin\Debug\net9.0\BouncyCastle.Cryptography.dll
 C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\bin\Debug\net9.0\MailKit.dll
 C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\bin\Debug\net9.0\MimeKit.dll
+C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\bin\Debug\net9.0\publish\web.config
+C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\bin\Debug\net9.0\publish\appsettings.Development.json
+C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\bin\Debug\net9.0\publish\appsettings.json
+C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\bin\Debug\net9.0\publish\SocialMediaAPI.deps.json
+C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\bin\Debug\net9.0\publish\SocialMediaAPI.runtimeconfig.json
+C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\bin\Debug\net9.0\publish\SocialMediaAPI.staticwebassets.endpoints.json
