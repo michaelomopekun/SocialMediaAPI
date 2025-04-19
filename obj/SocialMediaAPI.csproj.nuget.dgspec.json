@@ -77,6 +77,10 @@
               "target": "Package",
               "version": "[9.0.4, )"
             },
+            "Microsoft.Extensions.Caching.Memory": {
+              "target": "Package",
+              "version": "[9.0.4, )"
+            },
             "Nanoid": {
               "target": "Package",
               "version": "[3.1.0, )"

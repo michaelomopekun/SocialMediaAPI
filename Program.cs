@@ -24,6 +24,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 
+builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 // DbContext setup
