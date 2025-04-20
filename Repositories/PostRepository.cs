@@ -23,6 +23,9 @@ public class PostRepository : IPostRepository
         {
             await _context.Posts.AddAsync(post);
             await _context.SaveChangesAsync();
+
+            _cache.Remove($"posts-page-1-10");
+
             return post;
         }
         catch (Exception ex)
@@ -56,43 +59,70 @@ public class PostRepository : IPostRepository
 
     public async Task<IEnumerable<Post>> GetAllPostsAsync(int pageNumber = 1, int pageSize = 10)
     {
-        try
-        {
-            var posts = await _context.Posts
-                .Include(u => u.User)
-                .Include(l => l.Likes)
-                .Include(c => c.Comments)
-                .Include(s => s.Shares)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+        string cacheKey = $"posts-{pageNumber}-{pageSize}";
 
-            return posts;
-        }
-        catch (Exception ex)
+        if(!_cache.TryGetValue(cacheKey, out IEnumerable<Post>? posts))
         {
-            _logger.LogError(ex, "GetAllPostsAsync::Error retrieving all posts: {Message}", ex.Message);
-            throw new Exception($"GetAllPostsAsync::Error retrieving all posts: {ex.Message}");
+            try
+            {
+                posts = await _context.Posts
+                    .Include(u => u.User)
+                    .Include(l => l.Likes)
+                    .Include(c => c.Comments)
+                    .Include(s => s.Shares)
+                    .AsNoTracking()
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(p => new Post
+                    {
+                        Id = p.Id,
+                        Content = p.Content,
+                        ImageUrl = p.ImageUrl,
+                        CreatedAt = p.CreatedAt,
+                        UpdatedAt = p.UpdatedAt,
+                        UserId = p.UserId,
+                        User = p.User,
+                        LikesCount = p.Likes != null ? p.Likes.Count() : 0,
+                        CommentsCount = p.Comments != null ? p.Comments.Count() : 0,
+                        SharesCount = p.Shares != null ? p.Shares.Count() : 0
+                    })
+                    .ToListAsync();
+
+                var cacheOptions = new MemoryCacheEntryOptions()
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(CACHE_DURATION));
+
+                _cache.Set(cacheKey, posts, cacheOptions);
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetAllPostsAsync::Error retrieving all posts: {Message}", ex.Message);
+                throw new Exception($"GetAllPostsAsync::Error retrieving all posts: {ex.Message}");
+            }
         }
+
+        return posts!;
     }
 
-    public async Task<IEnumerable<Post>> GetFollowersPostsAsync(string userId)
+    public async Task<IEnumerable<Post>> GetFollowersPostsAsync(string userId, int pageNumber = 1, int pageSize = 10)
     {
         try
         {
-            var followeingId = await _context.Follows
-                .Where(f => f.FollowerUserId == userId)
-                .Select(fi => fi.FollowingUserId)
-                .ToListAsync();
-
             var posts = await _context.Posts
-                .Include(u => u.User)
-                .Include(l => l.Likes)
-                .Include(c => c.Comments)
-                .Include(s => s.Shares)
-                .Where(u => followeingId.Contains(u.UserId))
-                .OrderByDescending(c => c.CreatedAt)
-                .ToListAsync();
+            .Include(u => u.User)
+            .Include(l => l.Likes)
+            .Include(c => c.Comments)
+            .Include(s => s.Shares)
+            .Where(p => _context.Follows
+                .Where(f => f.FollowerUserId == userId)
+                .Select(f => f.FollowingUserId)
+                .Contains(p.UserId))
+            .OrderByDescending(c => c.CreatedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .AsNoTracking()
+            .ToListAsync();
 
             return posts;
         }
@@ -105,23 +135,39 @@ public class PostRepository : IPostRepository
 
     public async Task<Post> GetPostByIdAsync(int id)
     {
-        // string cacheKey = $"post-{id}";
-        try
+        string cacheKey = $"post-{id}";
+
+        if(!_cache.TryGetValue(cacheKey, out Post? post))
         {
-            var post = await _context.Posts
-                .Include(l => l.Likes)
-                .Include(c => c.Comments)
-                .Include(s => s.Shares)
-                .Include(u => u.User)
-                .FirstOrDefaultAsync(p => p.Id == id);
-            
-            return post;
+            try
+            {
+                post = await _context.Posts
+                    .Include(l => l.Likes)
+                    .Include(c => c.Comments)
+                    .Include(s => s.Shares)
+                    .Include(u => u.User)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.Id == id);
+
+                var cacheOptions = new MemoryCacheEntryOptions()
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(CACHE_DURATION));
+
+                if (post == null)
+                {
+                    throw new KeyNotFoundException($"Post with id {id} not found");
+                }
+
+                _cache.Set(cacheKey, post, cacheOptions);
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError("GetPostByIdAsync::Error getting post: {Message}", ex);
+                throw new Exception($"GetPostByIdAsync::Error getting post: {ex.Message}");
+            }
+
         }
-        catch(Exception ex)
-        {
-            _logger.LogError("GetPostByIdAsync::Error getting post: {Message}", ex);
-            throw new Exception($"GetPostByIdAsync::Error getting post: {ex.Message}");
-        }
+
+        return post!;
     }
 
     public async Task<IEnumerable<Post>> GetPostsByUserIdAsync(string userId)
@@ -206,6 +252,9 @@ public class PostRepository : IPostRepository
             existingPost.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+
+            _cache.Remove($"post-{Id}");
+            _cache.Remove($"posts-page-1-10");
 
             return existingPost;
         }
