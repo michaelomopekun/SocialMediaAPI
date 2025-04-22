@@ -185,3 +185,5 @@ C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\bin\Debug\
 C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\bin\Debug\net9.0\publish\SocialMediaAPI.deps.json
 C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\bin\Debug\net9.0\publish\SocialMediaAPI.runtimeconfig.json
 C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\bin\Debug\net9.0\publish\SocialMediaAPI.staticwebassets.endpoints.json
+C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\bin\Debug\net9.0\AutoMapper.dll
+C:\Users\omope\OneDrive\Documents\C#\GDG code challege\SocialMediaAPI\bin\Debug\net9.0\AutoMapper.Collection.dll

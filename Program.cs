@@ -23,9 +23,11 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Social Media API", Version = "v1" });
 });
 
-
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IPostService, PostService>();
+builder.Services.AddScoped<IPostRepository, PostRepository>();
 
 // DbContext setup
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
