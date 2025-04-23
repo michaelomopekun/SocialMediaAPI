@@ -12,8 +12,8 @@ using SocialMediaAPI.Data;
 namespace SocialMediaAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250419134121_updatePostEntity")]
-    partial class updatePostEntity
+    [Migration("20250422161112_UpdatePostIdToNanoid")]
+    partial class UpdatePostIdToNanoid
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -27,11 +27,8 @@ namespace SocialMediaAPI.Migrations
 
             modelBuilder.Entity("Comment", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Content")
                         .HasColumnType("nvarchar(max)");
@@ -39,8 +36,9 @@ namespace SocialMediaAPI.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("PostId")
-                        .HasColumnType("int");
+                    b.Property<string>("PostId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("RepliedUserId")
                         .HasColumnType("nvarchar(max)");
@@ -98,20 +96,18 @@ namespace SocialMediaAPI.Migrations
 
             modelBuilder.Entity("Like", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CommentId")
-                        .HasColumnType("int");
+                    b.Property<string>("CommentId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("PostId")
-                        .HasColumnType("int");
+                    b.Property<string>("PostId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("Reaction")
                         .HasColumnType("int");
@@ -130,7 +126,8 @@ namespace SocialMediaAPI.Migrations
                     b.HasIndex("PostId");
 
                     b.HasIndex("UserId", "CommentId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[CommentId] IS NOT NULL");
 
                     b.HasIndex("UserId", "PostId")
                         .IsUnique();
@@ -273,11 +270,8 @@ namespace SocialMediaAPI.Migrations
 
             modelBuilder.Entity("Post", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int?>("CommentsCount")
                         .HasColumnType("int");
@@ -315,17 +309,15 @@ namespace SocialMediaAPI.Migrations
 
             modelBuilder.Entity("Share", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("PostId")
-                        .HasColumnType("int");
+                    b.Property<string>("PostId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -474,8 +466,7 @@ namespace SocialMediaAPI.Migrations
                     b.HasOne("Comment", "Comment")
                         .WithMany("Likes")
                         .HasForeignKey("CommentId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Post", "Post")
                         .WithMany("Likes")

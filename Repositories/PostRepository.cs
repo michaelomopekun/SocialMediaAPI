@@ -35,7 +35,7 @@ public class PostRepository : IPostRepository
         }
     }
 
-    public async Task<bool> DeletePostAsync(int Id)
+    public async Task<bool> DeletePostAsync(string Id)
     {
         try
         {
@@ -133,7 +133,7 @@ public class PostRepository : IPostRepository
         }
     }
 
-    public async Task<Post> GetPostByIdAsync(int id)
+    public async Task<Post> GetPostByIdAsync(string id)
     {
         string cacheKey = $"post-{id}";
 
@@ -235,7 +235,7 @@ public class PostRepository : IPostRepository
         }
     }
 
-    public async Task<Post> UpdatePostAsync(int Id, Post post)
+    public async Task<Post> UpdatePostAsync(string Id, Post post)
     {
         try
         {

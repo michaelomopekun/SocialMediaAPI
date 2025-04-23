@@ -122,6 +122,8 @@ public class AuthenticationController : ControllerBase
     {
         try
         {
+            //use promise all to fetch user by email and username
+
             var userEmailExist = await _userManager.FindByEmailAsync(login.Email);
             var userNameExist = await _userManager.FindByNameAsync(login.UserName);
 
@@ -153,6 +155,9 @@ public class AuthenticationController : ControllerBase
 
             var token = GetToken(authClaims);
             var refreshToken = new JwtSecurityTokenHandler().WriteToken(token);
+
+            //store token in session
+            HttpContext.Session.SetString("JWTToken", refreshToken);
 
             return Ok(new
             {

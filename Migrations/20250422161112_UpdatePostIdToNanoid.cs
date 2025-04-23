@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SocialMediaAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialSocialMediaSchema : Migration
+    public partial class UpdatePostIdToNanoid : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -195,13 +195,15 @@ namespace SocialMediaAPI.Migrations
                 name: "Posts",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Content = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    LikesCount = table.Column<int>(type: "int", nullable: true),
+                    CommentsCount = table.Column<int>(type: "int", nullable: true),
+                    SharesCount = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -218,12 +220,11 @@ namespace SocialMediaAPI.Migrations
                 name: "Comments",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Content = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    PostId = table.Column<int>(type: "int", nullable: false),
+                    PostId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     RepliedUserId = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
@@ -248,10 +249,9 @@ namespace SocialMediaAPI.Migrations
                 name: "Shares",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    PostId = table.Column<int>(type: "int", nullable: false),
+                    PostId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
                 constraints: table =>
@@ -275,12 +275,11 @@ namespace SocialMediaAPI.Migrations
                 name: "Likes",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    PostId = table.Column<int>(type: "int", nullable: false),
+                    PostId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    CommentId = table.Column<int>(type: "int", nullable: false),
+                    CommentId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     Type = table.Column<int>(type: "int", nullable: false),
                     Reaction = table.Column<int>(type: "int", nullable: false)
                 },
@@ -383,7 +382,8 @@ namespace SocialMediaAPI.Migrations
                 name: "IX_Likes_UserId_CommentId",
                 table: "Likes",
                 columns: new[] { "UserId", "CommentId" },
-                unique: true);
+                unique: true,
+                filter: "[CommentId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Likes_UserId_PostId",

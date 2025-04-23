@@ -1,3 +1,4 @@
+using System.Drawing;
 using AutoMapper;
 using NanoidDotNet;
 using SocialMediaAPI.Models.DTOs;
@@ -7,6 +8,7 @@ public class PostService : IPostService
     private readonly IPostRepository _postRepository;
     private readonly IMapper _mapper;
     private readonly ILogger<PostService> _logger;
+    private const string size = "0123456789";
 
     public PostService(IPostRepository postRepository, IMapper mapper, ILogger<PostService> logger)
     {
@@ -25,7 +27,7 @@ public class PostService : IPostService
 
         var post = new Post
         {
-            Id = int.Parse(Nanoid.Generate(size: 7)),
+            Id = Nanoid.Generate(size, 8),
             Content = createPostDTO.Content,
             ImageUrl = createPostDTO.ImageUrl,
             UserId = userId.ToString(),
@@ -42,7 +44,7 @@ public class PostService : IPostService
         return _mapper.Map<PostResponseDTO>(createdPost);
     }
 
-    public async Task<bool> DeletePostAsync(int id, string userId)
+    public async Task<bool> DeletePostAsync(string id, string userId)
     {
 
         var post = await _postRepository.GetPostByIdAsync(id);
@@ -68,13 +70,13 @@ public class PostService : IPostService
         return _mapper.Map<IEnumerable<PostResponseDTO>>(posts);
     }
 
-    public async Task<IEnumerable<PostResponseDTO>> GetFlowersPostsAsync(string userId)
+    public async Task<IEnumerable<PostResponseDTO>> GetFollowersPostsAsync(string userId)
     {
         var posts = await _postRepository.GetFollowersPostsAsync(userId, 1, 10);       
         return _mapper.Map<IEnumerable<PostResponseDTO>>(posts);
     }
 
-    public async Task<PostResponseDTO?> GetPostByIdAsync(int id)
+    public async Task<PostResponseDTO?> GetPostByIdAsync(string id)
     {
         var post = await _postRepository.GetPostByIdAsync(id);
         return _mapper.Map<PostResponseDTO>(post);        
@@ -86,18 +88,33 @@ public class PostService : IPostService
         return _mapper.Map<IEnumerable<PostResponseDTO>>(posts);
     }
 
-    public async Task<PostResponseDTO?> UpdatePostAsync(int id, UpdatePostDTO updatePostDTO, string userId)
+    public async Task<PostResponseDTO?> UpdatePostAsync(string id, UpdatePostDTO updatePostDTO, string userId)
     {
-        var post = new Post
+        var existingPost = await _postRepository.GetPostByIdAsync(id);
+        if (existingPost == null)
         {
-            Id = id,
-            Content = updatePostDTO.Content,
-            ImageUrl = updatePostDTO.ImageUrl,
-            UserId = userId.ToString(),
-            UpdatedAt = DateTime.UtcNow
-        };
+            _logger.LogError("UpdatePostAsync::Error updating post: {Message}", "Post not found");
+            throw new Exception("UpdatePostAsync::Error updating post: Post not found");
+        }
 
-        var updatedPost = await _postRepository.UpdatePostAsync(id, post);
+        if (existingPost.UserId != userId)
+        {
+            _logger.LogError("UpdatePostAsync::Error updating post: {Message}", "You cannot update this post");
+            throw new UnauthorizedAccessException("You cannot update this post");
+        }
+
+        if (string.IsNullOrEmpty(updatePostDTO.Content))
+        {
+            throw new ArgumentException("Post content cannot be empty");
+        }
+
+   
+        existingPost.Content = updatePostDTO.Content;
+        existingPost.ImageUrl = updatePostDTO.ImageUrl;
+        // existingPost.UserId = userId.ToString();
+        existingPost.UpdatedAt = DateTime.UtcNow;
+
+        var updatedPost = await _postRepository.UpdatePostAsync(id, existingPost);
         if (updatedPost == null)
         {
             _logger.LogError("UpdatePostAsync::Error updating post: {Message}", "Post update failed");

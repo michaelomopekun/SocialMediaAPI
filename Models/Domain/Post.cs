@@ -1,8 +1,10 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using SocialMediaAPI.Models.Domain.User;
 
 public class Post
 {
-    public int Id {get;set;}
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
+    public string Id {get;set;} = string.Empty;
     public string? Content {get;set;}
     public string? ImageUrl {get;set;}
     public DateTime CreatedAt {get;set;}
@@ -20,12 +22,13 @@ public class Post
 
 public class Comment
 {
-    public int Id {get;set;}
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
+    public string Id {get;set;} = string.Empty;
     public string? Content {get;set;}
     public DateTime CreatedAt {get;set;}
     public DateTime? UpdatedAt {get;set;}
-    public int PostId {get;set;}
-    public string UserId {get;set;}
+    public string PostId {get;set;} = string.Empty;
+    public string UserId {get;set;} = string.Empty;
     public string? RepliedUserId {get;set;}
     public Post? Post {get;set;}
     public ApplicationUser? User {get;set;}
@@ -35,11 +38,11 @@ public class Comment
 
 public class Like
 {
-    public int Id {get;set;}
+    public string Id {get;set;} = string.Empty;
     public DateTime CreatedAt {get;set;}
-    public int PostId {get;set;}
-    public string UserId {get;set;}
-    public int CommentId {get;set;}
+    public string PostId {get;set;} = string.Empty;
+    public string UserId {get;set;} = string.Empty;
+    public string? CommentId {get;set;}
     public LikeType Type {get;set;}
     public ReactionType Reaction {get;set;}
     public Post? Post {get;set;}
@@ -66,10 +69,10 @@ public enum ReactionType
 
 public class Share
 {
-    public int Id {get;set;}
+    public string Id {get;set;} = string.Empty;
     public DateTime CreatedAt {get;set;}
-    public int PostId {get;set;}
-    public string UserId {get;set;}
+    public string PostId {get;set;} = string.Empty;
+    public string UserId {get;set;} = string.Empty;
     public Post? Post {get;set;}
     public ApplicationUser? User {get;set;}
 }
