@@ -16,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 //services setup .
 builder.Services.AddControllers();
+builder.Services.AddHealthChecks();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -90,6 +91,10 @@ builder.Host.UseSerilog();
 
 Log.Information("Starting web application");
 
+// Get port from Railway environment
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.UseUrls($"http://+:{port}");
+
 // build the app
 var app = builder.Build();
 
@@ -117,10 +122,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
-app.UseSession(); // Add this before Authentication
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();
 
