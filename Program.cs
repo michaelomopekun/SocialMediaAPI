@@ -22,14 +22,6 @@ builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 
 //services setup .
 builder.Services.AddControllers();
-builder.Services.AddHealthChecks()
-    .AddNpgSql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        name: "database",
-        tags: new[] { "ready" },
-        timeout: TimeSpan.FromSeconds(5)
-    )
-    .AddCheck("self", () => HealthCheckResult.Healthy(), tags: new[] { "live" });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -155,39 +147,9 @@ app.Use(async (context, next) =>
 });
 
 app.MapControllers();
-app.MapHealthChecks("/health/ready", new HealthCheckOptions
-{
-    Predicate = check => check.Tags.Contains("ready")
-});
 
-app.MapHealthChecks("/health/live", new HealthCheckOptions
-{
-    Predicate = check => check.Tags.Contains("live")
-});
-
-app.MapHealthChecks("/health", new HealthCheckOptions
-{
-    ResponseWriter = async (context, report) =>
-    {
-        context.Response.ContentType = "application/json";
-        
-        var result = new
-        {
-            status = report.Status.ToString(),
-            checks = report.Entries.Select(entry => new
-            {
-                name = entry.Key,
-                status = entry.Value.Status.ToString(),
-                exception = entry.Value.Exception?.Message,
-                duration = entry.Value.Duration.ToString()
-            })
-        };
-        
-        await JsonSerializer.SerializeAsync(context.Response.Body, result);
-    }
-});
-
-app.MapHealthChecks("/health");
+// Add this before app.Run()
+app.MapGet("/status", () => Results.Ok("API is running"));
 
 app.Run();
 
