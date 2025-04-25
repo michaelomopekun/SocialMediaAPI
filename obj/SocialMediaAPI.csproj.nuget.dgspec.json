@@ -51,6 +51,10 @@
         "net6.0": {
           "targetAlias": "net6.0",
           "dependencies": {
+            "AspNetCore.HealthChecks.NpgSql": {
+              "target": "Package",
+              "version": "[6.0.2, )"
+            },
             "AutoMapper.Collection": {
               "target": "Package",
               "version": "[8.2.0, )"

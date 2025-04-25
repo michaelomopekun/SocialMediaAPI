@@ -1,9 +1,11 @@
 using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using SocialMediaAPI.Data;
 using SocialMediaAPI.Models.Domain.User;
 using Serilog;
@@ -11,6 +13,7 @@ using Serilog.Events;
 using SocialMediaAPI.Constants;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
 using SocialMediaAPI.Mappings;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,7 +22,14 @@ builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 
 //services setup .
 builder.Services.AddControllers();
-builder.Services.AddHealthChecks();
+builder.Services.AddHealthChecks()
+    .AddNpgSql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        name: "database",
+        tags: new[] { "ready" },
+        timeout: TimeSpan.FromSeconds(5)
+    )
+    .AddCheck("self", () => HealthCheckResult.Healthy(), tags: new[] { "live" });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -130,7 +140,53 @@ app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "An unhandled exception occurred.");
+        throw;
+    }
+});
+
 app.MapControllers();
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
+
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("live")
+});
+
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        
+        var result = new
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.Select(entry => new
+            {
+                name = entry.Key,
+                status = entry.Value.Status.ToString(),
+                exception = entry.Value.Exception?.Message,
+                duration = entry.Value.Duration.ToString()
+            })
+        };
+        
+        await JsonSerializer.SerializeAsync(context.Response.Body, result);
+    }
+});
+
 app.MapHealthChecks("/health");
 
 app.Run();
