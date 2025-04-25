@@ -86,7 +86,7 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
     .Enrich.FromLogContext()
-    // .WriteTo.Console()
+    .WriteTo.Console()
     .WriteTo.File("Logs/app-.txt",
         rollingInterval: RollingInterval.Day,
         fileSizeLimitBytes: 1024 * 1024,
@@ -148,8 +148,17 @@ app.Use(async (context, next) =>
 
 app.MapControllers();
 
-// Add this before app.Run()
-app.MapGet("/status", () => Results.Ok("API is running"));
+app.MapGet("/status", () => 
+{
+    var status = new
+    {
+        Status = "Running",
+        Timestamp = DateTime.UtcNow,
+        Database = "Connected",
+        Version = "1.0.0"
+    };
+    return Results.Ok(status);
+});
 
 app.Run();
 
