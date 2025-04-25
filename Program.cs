@@ -98,9 +98,14 @@ builder.Host.UseSerilog();
 
 Log.Information("Starting web application");
 
-// Get port from Railway environment
+// Configure host and port for Railway
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-builder.WebHost.UseUrls($"http://+:{port}");
+builder.WebHost.UseKestrel(options =>
+{
+    options.ListenAnyIP(int.Parse(port)); // Listen on all IPs (0.0.0.0)
+});
+
+Log.Information("Configuring web server to listen on port {Port}", port);
 
 // build the app
 var app = builder.Build();
@@ -126,8 +131,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    app.UseHsts();
+}
 
-app.UseHttpsRedirection();
 app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
@@ -148,17 +156,37 @@ app.Use(async (context, next) =>
 
 app.MapControllers();
 
-// app.MapGet("/status", () => 
-// {
-//     var status = new
-//     {
-//         Status = "Running",
-//         Timestamp = DateTime.UtcNow,
-//         Database = "Connected",
-//         Version = "1.0.0"
-//     };
-//     return Results.Ok(status);
-// });
+// Uncomment and update the status endpoint
+app.MapGet("/status", () => 
+{
+    try 
+    {
+        using var scope = app.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var canConnect = context.Database.CanConnect();
+
+        var status = new
+        {
+            Status = "Running",
+            Timestamp = DateTime.UtcNow,
+            Port = Environment.GetEnvironmentVariable("PORT") ?? "8080",
+            Database = canConnect ? "Connected" : "Disconnected",
+            Environment = app.Environment.EnvironmentName
+        };
+        
+        Log.Information("Status check: {@Status}", status);
+        return Results.Ok(status);
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "Status check failed");
+        return Results.Problem(
+            title: "Status Check Failed",
+            detail: ex.Message,
+            statusCode: 500
+        );
+    }
+});
 
 app.Run();
 
