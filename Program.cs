@@ -148,17 +148,17 @@ app.Use(async (context, next) =>
 
 app.MapControllers();
 
-app.MapGet("/status", () => 
-{
-    var status = new
-    {
-        Status = "Running",
-        Timestamp = DateTime.UtcNow,
-        Database = "Connected",
-        Version = "1.0.0"
-    };
-    return Results.Ok(status);
-});
+// app.MapGet("/status", () => 
+// {
+//     var status = new
+//     {
+//         Status = "Running",
+//         Timestamp = DateTime.UtcNow,
+//         Database = "Connected",
+//         Version = "1.0.0"
+//     };
+//     return Results.Ok(status);
+// });
 
 app.Run();
 

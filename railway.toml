@@ -4,5 +4,4 @@ dockerfilePath = "Dockerfile"
 
 [deploy]
 startCommand = "dotnet SocialMediaAPI.dll"
-healthcheckPath = "/status"
 restartPolicyType = "ON_FAILURE"
