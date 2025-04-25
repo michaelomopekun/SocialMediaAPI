@@ -5,8 +5,6 @@ dockerfilePath = "Dockerfile"
 [deploy]
 startCommand = "dotnet SocialMediaAPI.dll"
 restartPolicyType = "ON_FAILURE"
-healthcheckPath = "/status"
-healthcheckTimeout = 10
 
 [deploy.envs]
 ASPNETCORE_ENVIRONMENT = "Production"
