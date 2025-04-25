@@ -16,9 +16,44 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Share> Shares { get; set; }
     public DbSet<Follow> Follows { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        if (!optionsBuilder.IsConfigured)
+        {
+            optionsBuilder.UseNpgsql();
+        }
+    }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+
+
+                // Add PostgreSQL-specific configurations
+        builder.HasDefaultSchema("public");
+
+        // Configure case-insensitive string comparison
+        builder.UseCollation("und-u-ks-level2");
+
+        // Add timestamp columns
+        foreach (var entityType in builder.Model.GetEntityTypes())
+        {
+            if (entityType.ClrType.GetProperty("CreatedAt") != null)
+            {
+                builder.Entity(entityType.ClrType)
+                    .Property("CreatedAt")
+                    .HasColumnType("timestamp with time zone")
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            }
+            if (entityType.ClrType.GetProperty("UpdatedAt") != null)
+            {
+                builder.Entity(entityType.ClrType)
+                    .Property("UpdatedAt")
+                    .HasColumnType("timestamp with time zone")
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            }
+        }
+        
 
         //Relationship configuration for Post
         builder.Entity<Post>()
