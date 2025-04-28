@@ -13,13 +13,7 @@ using SocialMediaAPI.Mappings;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure configuration sources
-builder.Configuration
-    .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
-    .AddEnvironmentVariables()
-    .Build();
+
 
 // Replace the environment variable validation section
 var requiredEnvVars = new[] 
@@ -34,6 +28,13 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .WriteTo.Console()
     .CreateLogger();
+    
+// Configure configuration sources
+builder.Configuration
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+    .AddEnvironmentVariables();
 
 foreach (var envVar in requiredEnvVars)
 {
