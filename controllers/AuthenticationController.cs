@@ -98,8 +98,9 @@ public class AuthenticationController : ControllerBase
             }
             catch(Exception ex)
             {
-                _logger.LogError("{Error}: Error sending email to user: {UserName}", ex.InnerException?.Message, register.UserName);
-                return StatusCode(500, new {Status = "Error", message = "REGISTER :endpoint: Error sending email", errorMessage = ex.InnerException?.Message});
+                var errorMessage = ex.InnerException?.Message ?? ex.Message;
+                _logger.LogError("{Error}: Error sending email to user: {UserName}", errorMessage, register.UserName);
+                return StatusCode(500, new {Status = "Error", message = "REGISTER :endpoint: Error sending email", errorMessage});
             }
 
             _logger.LogInformation("User created: {UserName}", register.UserName);
