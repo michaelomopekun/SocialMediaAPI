@@ -8,6 +8,6 @@ restartPolicyType = "ON_FAILURE"
 
 [deploy.envs]
 ASPNETCORE_ENVIRONMENT = "Production"
-JWT_SECRET = "${JWT_SECRET}"
+JWT_SECRET = "IPvizXRXV6l0XVysqq5aIXMeAh+BbNxQmk8Omp0oJGo="
 JWT_ISSUER = "https://socialmediaapi-production-74e1.up.railway.app"
 JWT_AUDIENCE = "https://socialmediaapi-production-74e1.up.railway.app"
