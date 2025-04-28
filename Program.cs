@@ -37,28 +37,21 @@ Log.Logger = new LoggerConfiguration()
 
 foreach (var envVar in requiredEnvVars)
 {
-    // Check configuration first
-    var configValue = builder.Configuration[envVar];
+    // Check JWT section first
+    var configValue = builder.Configuration[$"JWT:{envVar.Replace("JWT_", "")}"] ?? 
+                     builder.Configuration[envVar] ?? 
+                     Environment.GetEnvironmentVariable(envVar);
+
     if (!string.IsNullOrEmpty(configValue))
     {
         Log.Information("Found {EnvVar} in configuration", envVar);
         continue;
     }
 
-    // Then check environment variables
-    var envValue = Environment.GetEnvironmentVariable(envVar);
-    if (!string.IsNullOrEmpty(envValue))
-    {
-        Log.Information("Found {EnvVar} in environment variables", envVar);
-        continue;
-    }
-
-    // If neither exists, throw error
     var message = $"Required variable {envVar} is not set in either configuration or environment variables";
     Log.Error(message);
     throw new InvalidOperationException(message);
 }
-
 
 //services setup.
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
