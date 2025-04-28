@@ -13,26 +13,54 @@ using SocialMediaAPI.Mappings;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Validate required environment variables
+// Configure configuration sources
+builder.Configuration
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+    .AddEnvironmentVariables()
+    .Build();
+
+// Replace the environment variable validation section
 var requiredEnvVars = new[] 
 { 
-    "JWT_SECRET",
     "JWT_ISSUER",
+    "JWT_SECRET",
     "JWT_AUDIENCE"
 };
 
+// Initialize Serilog
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .WriteTo.Console()
+    .CreateLogger();
+
 foreach (var envVar in requiredEnvVars)
 {
-    var value = Environment.GetEnvironmentVariable(envVar);
-    if (string.IsNullOrEmpty(value))
+    // Check configuration first
+    var configValue = builder.Configuration[envVar];
+    if (!string.IsNullOrEmpty(configValue))
     {
-        throw new InvalidOperationException($"Required environment variable {envVar} is not set");
+        Log.Information("Found {EnvVar} in configuration", envVar);
+        continue;
     }
-    Log.Information("Environment variable {EnvVar} is configured", envVar);
+
+    // Then check environment variables
+    var envValue = Environment.GetEnvironmentVariable(envVar);
+    if (!string.IsNullOrEmpty(envValue))
+    {
+        Log.Information("Found {EnvVar} in environment variables", envVar);
+        continue;
+    }
+
+    // If neither exists, throw error
+    var message = $"Required variable {envVar} is not set in either configuration or environment variables";
+    Log.Error(message);
+    throw new InvalidOperationException(message);
 }
 
 
-//services setup .
+//services setup.
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -83,7 +111,18 @@ builder.Services.AddAuthentication(options =>
 {
     try 
     {
-        var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
+        var jwtSecret = builder.Configuration["JWT:Secret"] ?? 
+                        builder.Configuration["JWT_SECRET"] ?? 
+                        Environment.GetEnvironmentVariable("JWT_SECRET");
+
+        var jwtIssuer = builder.Configuration["JWT:ValidIssuer"] ?? 
+                        builder.Configuration["JWT_ISSUER"] ?? 
+                        Environment.GetEnvironmentVariable("JWT_ISSUER");
+
+        var jwtAudience = builder.Configuration["JWT:ValidAudience"] ?? 
+                         builder.Configuration["JWT_AUDIENCE"] ?? 
+                         Environment.GetEnvironmentVariable("JWT_AUDIENCE");
+
         if (string.IsNullOrEmpty(jwtSecret))
         {
             Log.Error("JWT_SECRET environment variable is not set");
@@ -98,8 +137,8 @@ builder.Services.AddAuthentication(options =>
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER"),
-            ValidAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"),
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(jwtSecret))
         };
@@ -129,7 +168,7 @@ builder.Host.UseSerilog();
 Log.Information("Starting web application");
 
 // Configure host and port for Railway
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+var port = builder.Configuration["PORT"] ?? Environment.GetEnvironmentVariable("PORT") ?? "8080";
 builder.WebHost.UseKestrel(options =>
 {
     options.ListenAnyIP(int.Parse(port));
@@ -139,6 +178,15 @@ Log.Information("Configuring web server to listen on port {Port}", port);
 
 // build the app
 var app = builder.Build();
+
+Log.Information("Web application built successfully");
+if (app.Environment.IsDevelopment())
+{
+    foreach (var config in builder.Configuration.AsEnumerable())
+    {
+        Log.Debug("Config: {Key} = {Value}", config.Key, config.Key.Contains("SECRET") ? "[REDACTED]" : config.Value);
+    }
+}
 
 // setup Identity Roles
 using (var scope = app.Services.CreateScope())
@@ -199,7 +247,7 @@ app.MapControllers();
 //         {
 //             Status = "Running",
 //             Timestamp = DateTime.UtcNow,
-//             Port = Environment.GetEnvironmentVariable("PORT") ?? "8080",
+//             Port = builder.Configuration["PORT"] ?? Environment.GetEnvironmentVariable("PORT") ?? "8080",
 //             Database = canConnect ? "Connected" : "Disconnected",
 //             Environment = app.Environment.EnvironmentName
 //         };

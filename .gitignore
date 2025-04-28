@@ -9,3 +9,4 @@
 *obj/Debug/net9.0/SocialMediaAPI.AssemblyInfoInputs.cache
 *\publish
 *\logs
+# *\.env
