@@ -1,26 +1,39 @@
 using System.Text;
-using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using SocialMediaAPI.Data;
 using SocialMediaAPI.Models.Domain.User;
 using Serilog;
 using Serilog.Events;
 using SocialMediaAPI.Constants;
-using Npgsql.EntityFrameworkCore.PostgreSQL;
 using SocialMediaAPI.Mappings;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
-builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
+// Validate required environment variables
+var requiredEnvVars = new[] 
+{ 
+    "JWT_SECRET",
+    "JWT_ISSUER",
+    "JWT_AUDIENCE"
+};
+
+foreach (var envVar in requiredEnvVars)
+{
+    var value = Environment.GetEnvironmentVariable(envVar);
+    if (string.IsNullOrEmpty(value))
+    {
+        throw new InvalidOperationException($"Required environment variable {envVar} is not set");
+    }
+    Log.Information("Environment variable {EnvVar} is configured", envVar);
+}
+
 
 //services setup .
+builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -68,35 +81,34 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
-    if (string.IsNullOrEmpty(jwtSecret))
+    try 
     {
-        throw new InvalidOperationException("JWT_SECRET environment variable is not set");
-    }
-
-    var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
-    var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
-
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? issuer,
-        ValidAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? audience,
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(jwtSecret))
-    };
-
-    options.Events = new JwtBearerEvents
-    {
-        OnAuthenticationFailed = context =>
+        var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
+        if (string.IsNullOrEmpty(jwtSecret))
         {
-            Log.Error("JWT Authentication failed: {Error}", context.Exception.Message);
-            return Task.CompletedTask;
+            Log.Error("JWT_SECRET environment variable is not set");
+            throw new InvalidOperationException("JWT_SECRET environment variable is not set");
         }
-    };
+
+        Log.Information("Configuring JWT authentication");
+        
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER"),
+            ValidAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"),
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtSecret))
+        };
+    }
+    catch (Exception ex)
+    {
+        Log.Fatal(ex, "Failed to configure JWT authentication");
+        throw;
+    }
 });
 
 // Serilog setup
