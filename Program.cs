@@ -68,16 +68,34 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
+    var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
+    if (string.IsNullOrEmpty(jwtSecret))
+    {
+        throw new InvalidOperationException("JWT_SECRET environment variable is not set");
+    }
+
+    var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
+    var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["JWT:ValidIssuer"],
-        ValidAudience = builder.Configuration["JWT:ValidAudience"],
+        ValidIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? issuer,
+        ValidAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? audience,
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"]!))
+            Encoding.UTF8.GetBytes(jwtSecret))
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            Log.Error("JWT Authentication failed: {Error}", context.Exception.Message);
+            return Task.CompletedTask;
+        }
     };
 });
 
