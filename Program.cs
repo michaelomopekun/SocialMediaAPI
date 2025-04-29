@@ -14,6 +14,7 @@ using SocialMediaAPI.Mappings;
 var builder = WebApplication.CreateBuilder(args);
 
 
+DotNetEnv.Env.Load();
 
 // Replace the environment variable validation section
 var requiredEnvVars = new[] 
@@ -39,9 +40,7 @@ builder.Configuration
 foreach (var envVar in requiredEnvVars)
 {
     // Check JWT section first
-    var configValue = builder.Configuration[$"JWT:{envVar.Replace("JWT_", "")}"] ?? 
-                     builder.Configuration[envVar] ?? 
-                     Environment.GetEnvironmentVariable(envVar);
+    var configValue = Environment.GetEnvironmentVariable(envVar);
 
     if (!string.IsNullOrEmpty(configValue))
     {
@@ -69,7 +68,13 @@ builder.Services.AddScoped<IPostRepository, PostRepository>();
 builder.Services.AddScoped<IPostService, PostService>();
 
 // Configure DbContext
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = $"Server={Environment.GetEnvironmentVariable("POSTGRES_HOST")};" +
+                      $"Port={Environment.GetEnvironmentVariable("POSTGRES_PORT")};" +
+                      $"Database={Environment.GetEnvironmentVariable("POSTGRES_DB")};" +
+                      $"Username={Environment.GetEnvironmentVariable("POSTGRES_USER")};" +
+                      $"Password={Environment.GetEnvironmentVariable("POSTGRES_PASSWORD")};" +
+                      "SSL Mode=Require;Trust Server Certificate=true";
+                      
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString, 
         x => x.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));

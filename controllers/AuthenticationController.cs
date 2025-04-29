@@ -19,14 +19,12 @@ public class AuthenticationController : ControllerBase
     private const string NanoidSize = UppercaseLetters + LowercaseLetters + Numbers;
 
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IConfiguration _configuration;
     private readonly ILogger<AuthenticationController> _logger;
     private readonly IEmailService _emailService;
 
-    public AuthenticationController(UserManager<ApplicationUser> userManager, IConfiguration configuration, ILogger<AuthenticationController> logger, IEmailService emailService)
+    public AuthenticationController(UserManager<ApplicationUser> userManager, ILogger<AuthenticationController> logger, IEmailService emailService)
     {
         _userManager = userManager;
-        _configuration = configuration;
         _logger = logger;
         _emailService = emailService;
     }
@@ -180,13 +178,18 @@ public class AuthenticationController : ControllerBase
 
     private JwtSecurityToken GetToken(List<Claim> authClaims)
     {
-        var jwtSecret = _configuration["JWT:Secret"] ?? throw new InvalidOperationException("JWT:Secret is not configured");
+        var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new InvalidOperationException("JWT:Secret is not configured");
+
+        var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? throw new InvalidOperationException("JWT_ISSUER environment variable is not configured");
+
+        var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? throw new InvalidOperationException("JWT_AUDIENCE environment variable is not configured");
+        
         var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
 
         var token = new JwtSecurityToken(
-            issuer: _configuration["JWT:ValidIssuer"],
-            audience: _configuration["JWT:ValidAudience"],
-            expires: DateTime.Now.AddMinutes(Convert.ToDouble(_configuration["JWT:TokenValidityInMinutes"])),
+            issuer: jwtIssuer,
+            audience: jwtAudience,
+            expires: DateTime.Now.AddHours(Environment.GetEnvironmentVariable("JWT_EXPIRATION") != null ? Convert.ToDouble(Environment.GetEnvironmentVariable("JWT_EXPIRATION")) : 1),
             claims: authClaims,
             signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
         );
