@@ -9,4 +9,13 @@
 *obj/Debug/net9.0/SocialMediaAPI.AssemblyInfoInputs.cache
 *\publish
 *\logs
-# *\.env
+*.env
+
+# Environment variables
+.env
+appsettings.Development.json
+
+# Secrets
+*.user
+*.pfx
+*.key
