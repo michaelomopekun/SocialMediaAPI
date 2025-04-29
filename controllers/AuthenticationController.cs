@@ -90,16 +90,18 @@ public class AuthenticationController : ControllerBase
                 return BadRequest(new {Status = "Error", message = "Error generating email confirmation link"});
             }
 
-            try
+            _=Task.Run(async () =>
             {
-                await _emailService.SendEmailAsync(user.Email, "Confirm your email => SocialMediaApi", $"Please confirm your account by clicking this link: <a href='{confirmationLink}'>click here</a>");
-            }
-            catch(Exception ex)
-            {
-                var errorMessage = ex.InnerException?.Message ?? ex.Message;
-                _logger.LogError("{Error}: Error sending email to user: {UserName}", errorMessage, register.UserName);
-                return StatusCode(500, new {Status = "Error", message = "REGISTER :endpoint: Error sending email", errorMessage});
-            }
+                try
+                {
+                    await _emailService.SendEmailAsync(user.Email, "Confirm your email => SocialMediaApi", $"Please confirm your account by clicking this link: <a href='{confirmationLink}'>click here</a>");
+                }
+                catch(Exception ex)
+                {
+                    var errorMessage = ex.InnerException?.Message ?? ex.Message;
+                    _logger.LogError("{Error}: Error sending email to user: {UserName}", errorMessage, register.UserName);
+                }
+            });
 
             _logger.LogInformation("User created: {UserName}", register.UserName);
 

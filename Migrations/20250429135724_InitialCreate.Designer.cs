@@ -12,7 +12,7 @@ using SocialMediaAPI.Data;
 namespace SocialMediaAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250425100202_InitialCreate")]
+    [Migration("20250429135724_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
