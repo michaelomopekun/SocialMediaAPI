@@ -141,6 +141,20 @@ builder.Services.AddAuthentication(options =>
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(jwtSecret))
         };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Log.Error(context.Exception, "JWT validation failed");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Log.Information("JWT token validated successfully for: {Name}", context.Principal.Identity?.Name);
+                return Task.CompletedTask;
+            }
+        };
     }
     catch (Exception ex)
     {
@@ -148,6 +162,7 @@ builder.Services.AddAuthentication(options =>
         throw;
     }
 });
+
 
 // Serilog setup
 Log.Logger = new LoggerConfiguration()

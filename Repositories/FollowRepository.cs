@@ -116,7 +116,15 @@ public class FollowRepository : IFollowRepository
 
     public Task<Follow> GetFollowByFollowerAndFollowingIdAsync(string followerId, string followingId)
     {
-        throw new NotImplementedException();
+        try
+        {
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetFollowByFollowerAndFollowingIdAsync::Error fetching follow for user {FollowerId} to {FollowingId}", followerId, followingId);
+            throw;
+        }
     }
 
     public Task<IEnumerable<Follow>> GetFollowersByUserIdAsync(string userId, int pageNumber = 1, int pageSize = 10)
