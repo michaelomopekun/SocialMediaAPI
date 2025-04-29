@@ -202,20 +202,51 @@ public class AuthenticationController : ControllerBase
 
     [HttpGet]
     [Route("confirm-email")]
-    public async Task<IActionResult> ConfirmEmail(string userId, string token)
+    public async Task<IActionResult> ConfirmEmail(string userId, string token = "")
     {
         try
         {
-            if(string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(token))
-            {
-                return BadRequest(new {Status = "Error", message = "Invalid email confirmation link"});
-            }
-
             var user = await _userManager.FindByIdAsync(userId);
 
             if(user == null)
             {
                 return BadRequest(new {Status = "Error", message = "User not found"});
+            }
+
+            if(string.IsNullOrEmpty(token))
+            {
+                user = await _userManager.FindByIdAsync(userId);
+
+                token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
+                if(token == null)
+                {
+                    return BadRequest(new {Status = "Error", message = "Error generating email confirmation token"});
+                }
+
+                var confirmationLink = Url.Action("ConfirmEmail", "Authentication", new { userId = user.Id, Token = token }, Request.Scheme);
+                if(confirmationLink == null)
+                {
+                    return BadRequest(new {Status = "Error", message = "Error generating email confirmation link"});
+                }
+
+                _=Task.Run(async () =>
+                {
+                    try
+                    {
+                        await _emailService.SendEmailAsync(user.Email, "Confirm your email => SocialMediaApi", $"Please confirm your account by clicking this link: <a href='{confirmationLink}'>click here</a>");
+                    }
+                    catch(Exception ex)
+                    {
+                        var errorMessage = ex.InnerException?.Message ?? ex.Message;
+                        _logger.LogError("{Error}: Error sending email to user: {UserName}", errorMessage, user.UserName);
+                    }
+                });
+            }
+
+            if(string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(token))
+            {
+                return BadRequest(new {Status = "Error", message = "Invalid email confirmation link"});
             }
 
             var result = await _userManager.ConfirmEmailAsync(user, token);
