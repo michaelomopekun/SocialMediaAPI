@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SocialMediaAPI.Models.DTOs;
 
-[Authorize]
+// [Authorize]
 [ApiController]
 [Route("api/posts")]
 [Produces("application/json")]
