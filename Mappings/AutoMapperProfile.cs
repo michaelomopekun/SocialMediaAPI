@@ -23,6 +23,12 @@ namespace SocialMediaAPI.Mappings
             CreateMap<UpdatePostDTO, Post>()
                 .ForMember(dest => dest.UpdatedAt, 
                     opt => opt.MapFrom(src => DateTime.UtcNow));
+
+            CreateMap<Comment, CommentResponseDTO>()
+                .ForMember(dest => dest.UserName, 
+                    opt => opt.MapFrom(src => src.User != null ? src.User.UserName : string.Empty));
+            CreateMap<CreateCommentDTO, Comment>();
+            CreateMap<UpdateCommentDTO, Comment>();
         }
     }
 }

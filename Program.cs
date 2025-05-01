@@ -66,6 +66,51 @@ builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPostRepository, PostRepository>();
 builder.Services.AddScoped<IPostService, PostService>();
+builder.Services.AddScoped<IFollowRepository, FollowRepository>();
+builder.Services.AddScoped<IFollowService, FollowService>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+
+// Add Swagger configuration
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo 
+    { 
+        Title = "Social Media API", 
+        Version = "v1",
+        Description = "A Social Media API built with ASP.NET Core",
+        Contact = new OpenApiContact
+        {
+            Name = "Your Name",
+            Email = "omopekunmichael@gmail.com",
+            Url = new Uri("https://socialmediaapi-production-74e1.up.railway.app")
+        }
+    });
+
+    // Add JWT Authentication
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 // Configure DbContext
 var connectionString = $"Server={Environment.GetEnvironmentVariable("POSTGRES_HOST")};" +
@@ -91,7 +136,6 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>( option =>
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
-// Add these services before AddAuthentication
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
@@ -190,7 +234,6 @@ builder.WebHost.UseKestrel(options =>
 
 Log.Information("Configuring web server to listen on port {Port}", port);
 
-// build the app
 var app = builder.Build();
 
 Log.Information("Web application built successfully");
@@ -217,7 +260,6 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -232,53 +274,6 @@ app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
-
-// app.Use(async (context, next) =>
-// {
-//     try
-//     {
-//         await next();
-//     }
-//     catch (Exception ex)
-//     {
-//         Log.Error(ex, "An unhandled exception occurred.");
-//         throw;
-//     }
-// });
-
 app.MapControllers();
-
-// Uncomment and update the status endpoint
-// app.MapGet("/status", () => 
-// {
-//     try 
-//     {
-//         using var scope = app.Services.CreateScope();
-//         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-//         var canConnect = context.Database.CanConnect();
-
-//         var status = new
-//         {
-//             Status = "Running",
-//             Timestamp = DateTime.UtcNow,
-//             Port = builder.Configuration["PORT"] ?? Environment.GetEnvironmentVariable("PORT") ?? "8080",
-//             Database = canConnect ? "Connected" : "Disconnected",
-//             Environment = app.Environment.EnvironmentName
-//         };
-        
-//         Log.Information("Status check: {@Status}", status);
-//         return Results.Ok(status);
-//     }
-//     catch (Exception ex)
-//     {
-//         Log.Error(ex, "Status check failed");
-//         return Results.Problem(
-//             title: "Status Check Failed",
-//             detail: ex.Message,
-//             statusCode: 500
-//         );
-//     }
-// });
-
 app.Run();
 

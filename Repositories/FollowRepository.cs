@@ -114,66 +114,244 @@ public class FollowRepository : IFollowRepository
         return Enumerable.Empty<Follow>();
     }
 
-    public Task<Follow> GetFollowByFollowerAndFollowingIdAsync(string followerId, string followingId)
+    public async Task<Follow> GetFollowByFollowerAndFollowingIdAsync(string followerId, string followingId)
     {
         try
         {
-            return null;
+            if (string.IsNullOrEmpty(followerId) || string.IsNullOrEmpty(followingId))
+            {
+                throw new ArgumentException("Follower ID and Following ID cannot be null");
+            }
+
+            var follow = await _context.Follows
+                .FirstOrDefaultAsync(f => f.FollowerUserId == followerId && 
+                                        f.FollowingUserId == followingId) ?? throw new ArgumentException("Follow not found", nameof(followingId));
+                
+            return follow;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "GetFollowByFollowerAndFollowingIdAsync::Error fetching follow for user {FollowerId} to {FollowingId}", followerId, followingId);
+            _logger.LogError(ex, "Error getting follow relationship between {FollowerId} and {FollowingId}", followerId, followingId);
             throw;
         }
     }
 
-    public Task<IEnumerable<Follow>> GetFollowersByUserIdAsync(string userId, int pageNumber = 1, int pageSize = 10)
+    public async Task<IEnumerable<Follow>> GetFollowersByUserIdAsync(string userId, int pageNumber = 1, int pageSize = 10)
     {
-        throw new NotImplementedException();
+        if(string.IsNullOrEmpty(userId))
+        {
+            throw new ArgumentException("GetFollowersByUserIdAsync::User ID cannot be null or empty", nameof(userId));
+        }
+
+        try
+        {
+
+            return await _context.Follows
+                .Where(f => f.FollowingUserId == userId && !f.IsBlocked)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetFollowersByUserIdAsync::Error fetching followers for user {UserId}", userId);
+            throw;
+        }
     }
 
     public Task<int> GetFollowersCountAsync(string userId)
     {
-        throw new NotImplementedException();
+        if(string.IsNullOrEmpty(userId))
+        {
+            throw new ArgumentException("GetFollowersCountAsync::User ID cannot be null or empty", nameof(userId));
+        }
+
+        try
+        {
+            return _context.Follows.CountAsync(f => f.FollowingUserId == userId && !f.IsBlocked);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetFollowersCountAsync::Error fetching followers count for user {UserId}", userId);
+            throw;
+        }
     }
 
-    public Task<IEnumerable<Follow>> GetFollowingByUserIdAsync(string userId, int pageNumber = 1, int pageSize = 10)
+    public async Task<IEnumerable<Follow>> GetFollowingByUserIdAsync(string userId, int pageNumber = 1, int pageSize = 10)
     {
-        throw new NotImplementedException();
+        if(string.IsNullOrEmpty(userId))
+        {
+            throw new ArgumentException("GetFollowingByUserIdAsync::User ID cannot be null or empty", nameof(userId));
+        }
+
+        try
+        {
+            return await _context.Follows
+                .Where(f => f.FollowerUserId == userId && !f.IsBlocked)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetFollowingByUserIdAsync::Error fetching following for user {UserId}", userId);
+            throw;
+        }
     }
 
     public Task<int> GetFollowingCountAsync(string userId)
     {
-        throw new NotImplementedException();
+        if(string.IsNullOrEmpty(userId))
+        {
+            throw new ArgumentException("GetFollowingCountAsync::User ID cannot be null or empty", nameof(userId));
+        }
+
+        try
+        {
+            return _context.Follows.CountAsync(f => f.FollowerUserId == userId && !f.IsBlocked);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetFollowingCountAsync::Error fetching following count for user {UserId}", userId);
+            throw;
+        }
     }
 
-    public Task<IEnumerable<Follow>> GetMutualFollowersAsync(string userId1, string userId2, int pageNumber = 1, int pageSize = 10)
+    public async Task<IEnumerable<Follow>> GetMutualFollowersAsync(string userId1, string userId2, int pageNumber = 1, int pageSize = 10)
     {
-        throw new NotImplementedException();
+        if(string.IsNullOrEmpty(userId1) || string.IsNullOrEmpty(userId2))
+        {
+            throw new ArgumentException("GetMutualFollowersAsync::User IDs cannot be null or empty", nameof(userId1));
+        }
+
+        try
+        {
+            return await _context.Follows
+                .Where(f => f.FollowerUserId == userId1 && f.FollowingUserId == userId2 && !f.IsBlocked)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetMutualFollowersAsync::Error fetching mutual followers between user {UserId1} and {UserId2}", userId1, userId2);
+            throw;
+        }
     }
 
-    public Task<bool> IsBlockedAsync(string userId, string blockedUserId)
+    public async Task<bool> IsBlockedAsync(string userId, string blockedUserId)
     {
-        throw new NotImplementedException();
+        if(string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(blockedUserId))
+        {
+            throw new ArgumentException("IsBlockedAsync::User ID and Blocked User ID cannot be null or empty", nameof(userId));
+        }
+
+        try
+        {
+            return await _context.Follows
+                .Where(f => f.FollowerUserId == userId && f.FollowingUserId == blockedUserId && f.IsBlocked)
+                .AnyAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "IsBlockedAsync::Error checking if user {UserId} has blocked {BlockedUserId}", userId, blockedUserId);
+            throw;
+        }
     }
 
-    public Task<bool> IsFollowingAsync(string followerId, string followingId)
+    public async Task<bool> IsFollowingAsync(string followerId, string followingId)
     {
-        throw new NotImplementedException();
+        if(string.IsNullOrEmpty(followerId) || string.IsNullOrEmpty(followingId))
+        {
+            throw new ArgumentException("IsFollowingAsync::Follower ID and Following ID cannot be null or empty", nameof(followerId));
+        }
+
+        try
+        {
+            return await _context.Follows
+                .Where(f => f.FollowingUserId == followingId && f.FollowerUserId == followerId && !f.IsBlocked)
+                .AnyAsync();
+        }
+        catch(Exception ex)
+        {
+            _logger.LogError(ex, "IsFollowingAsync::Error checking if user {FollowerId} is following {FollowingId}", followerId, followingId);
+            throw;
+        }
     }
 
-    public Task<bool> UnblockUserAsync(string userId, string blockedUserId)
+    public async Task<bool> UnblockUserAsync(string userId, string blockedUserId)
     {
-        throw new NotImplementedException();
+        if(string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(blockedUserId))
+        {
+            throw new ArgumentException("UnblockUserAsync::User ID and Blocked User ID cannot be null or empty", nameof(userId));
+        }
+
+        try
+        {
+            var blockedUser = await _context.Follows.FirstOrDefaultAsync(f => f.FollowerUserId == blockedUserId && f.FollowingUserId == userId) ?? throw new ArgumentException("Blocked user not found", nameof(blockedUserId));
+        
+            blockedUser.IsBlocked = false;
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+        catch(Exception ex)
+        {
+            _logger.LogError(ex, "UnblockUserAsync::Error unblocking user {BlockedUserId} by {UserId}", blockedUserId, userId);
+            throw;
+        }
     }
 
-    public Task<bool> UnFollowAsync(string id)
+    public async Task<bool> UnFollowAsync(string id)
     {
-        throw new NotImplementedException();
+        if(string.IsNullOrEmpty(id))
+        {
+            throw new ArgumentException("UnFollowAsync::Follow ID cannot be null or empty", nameof(id));
+        }
+
+        try
+        {
+            var follow = await _context.Follows.FirstAsync(f => f.Id.ToString() == id) ?? throw new ArgumentException("UnFollowAsync::Follow not found", nameof(id));
+        
+            _context.Follows.Remove(follow);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+        catch(Exception ex)
+        {
+            _logger.LogError(ex, "UnFollowAsync::Error unfollowing user with ID {Id}", id);
+            throw;
+        }
     }
 
-    public Task<Follow> UpdateFollowAsync(string id, Follow follow)
+    public async Task<Follow> UpdateFollowAsync(string id, Follow follow)
     {
-        throw new NotImplementedException();
+        if(string.IsNullOrEmpty(id) || follow == null)
+        {
+            throw new ArgumentException("UpdateFollowAsync::Follow ID and Follow cannot be null or empty", nameof(id));
+        }
+
+        try
+        {
+            var follows = await _context.Follows.FindAsync(id) ?? throw new ArgumentException("UpdateFollowAsync::Follow not found", nameof(id));
+
+            follows.IsBlocked = follow.IsBlocked;
+            follows.FollowerUserId = follow.FollowerUserId;
+            follows.FollowingUserId = follow.FollowingUserId;
+            follows.FollowedAt = follow.FollowedAt;
+
+            _context.Follows.Update(follows);
+            await _context.SaveChangesAsync();
+
+            return follows;
+
+        }
+        catch(Exception ex)
+        {
+
+            _logger.LogError(ex, "UpdateFollowAsync::Error updating follow with ID {Id}", id);
+            throw;
+        }
     }
 }

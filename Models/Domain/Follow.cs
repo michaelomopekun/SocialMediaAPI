@@ -4,6 +4,10 @@ public class Follow
 {
     public int Id {get;set;}
     public DateTime FollowedAt {get;set;}
+    public DateTime? UpdatedAt {get;set;}
+    public DateTime? BlockedAt {get;set;}
+    public DateTime? UnblockedAt {get;set;}
+    public DateTime? UnfollowedAt {get;set;}
     public string FollowerUserId {get;set;} = string.Empty;
     public string FollowingUserId {get;set;} = string.Empty;
     public bool IsFollowing {get;set;} = false;
