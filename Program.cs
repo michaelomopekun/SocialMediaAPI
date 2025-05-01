@@ -57,10 +57,6 @@ foreach (var envVar in requiredEnvVars)
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Social Media API", Version = "v1" });
-});
 
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IEmailService, EmailService>();
@@ -80,7 +76,7 @@ builder.Services.AddSwaggerGen(c =>
         Description = "A Social Media API built with ASP.NET Core",
         Contact = new OpenApiContact
         {
-            Name = "Your Name",
+            Name = "galaxia",
             Email = "omopekunmichael@gmail.com",
             Url = new Uri("https://socialmediaapi-production-74e1.up.railway.app")
         }
@@ -260,19 +256,14 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-if (app.Environment.IsDevelopment())
-{
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Social Media API v1");
         c.RoutePrefix = "swagger";
     });
-}
-else
-{
-    app.UseHsts();
-}
+
+app.UseHsts();
 
 app.UseRouting();
 app.UseSession();
