@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 
 [ApiController]
-[Route("api/posts")]
+[Route("api/follow")]
 [Produces("application/json")]
 [Consumes("application/json")]
 public class FollowController : ControllerBase

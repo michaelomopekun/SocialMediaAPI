@@ -222,7 +222,7 @@ public class PostController : ControllerBase
     }
 
 
-    [HttpPost("{postId}/comments")]
+    [HttpGet("{postId}/comments")]
     public async Task<ActionResult<IEnumerable<CommentResponseDTO>>> GetPostComments(string postId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         try
