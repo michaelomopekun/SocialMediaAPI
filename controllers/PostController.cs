@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SocialMediaAPI.Models.DTOs;
 
-// [Authorize]
+[Authorize]
 [ApiController]
 [Route("api/posts")]
 [Produces("application/json")]
@@ -117,7 +117,7 @@ public class PostController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<ActionResult> DelectePost(string id)
+    public async Task<ActionResult> DeletePost(string id)
     {
         try
         {
@@ -133,7 +133,7 @@ public class PostController : ControllerBase
                 return NotFound(new { Status = "Error", Message = "Post not found" });
             }
 
-            return NoContent();
+            return Ok( new { Status = "Success", Message = "Post deleted successfully" });
         }
         catch (UnauthorizedAccessException)
         {

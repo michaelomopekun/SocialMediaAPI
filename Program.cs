@@ -106,7 +106,21 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
+
+    c.AddServer(new OpenApiServer
+    {
+        Url = "https://socialmediaapi-production-74e1.up.railway.app"
+    });
 });
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+    });
+});
+
 
 // Configure DbContext
 var connectionString = $"Server={Environment.GetEnvironmentVariable("POSTGRES_HOST")};" +
@@ -150,17 +164,11 @@ builder.Services.AddAuthentication(options =>
 {
     try 
     {
-        var jwtSecret = builder.Configuration["JWT:Secret"] ?? 
-                        builder.Configuration["JWT_SECRET"] ?? 
-                        Environment.GetEnvironmentVariable("JWT_SECRET");
+        var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
 
-        var jwtIssuer = builder.Configuration["JWT:ValidIssuer"] ?? 
-                        builder.Configuration["JWT_ISSUER"] ?? 
-                        Environment.GetEnvironmentVariable("JWT_ISSUER");
+        var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
 
-        var jwtAudience = builder.Configuration["JWT:ValidAudience"] ?? 
-                         builder.Configuration["JWT_AUDIENCE"] ?? 
-                         Environment.GetEnvironmentVariable("JWT_AUDIENCE");
+        var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
 
         if (string.IsNullOrEmpty(jwtSecret))
         {
@@ -178,8 +186,7 @@ builder.Services.AddAuthentication(options =>
             ValidateIssuerSigningKey = true,
             ValidIssuer = jwtIssuer,
             ValidAudience = jwtAudience,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtSecret))
+            IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(jwtSecret))
         };
 
         options.Events = new JwtBearerEvents
@@ -259,10 +266,11 @@ using (var scope = app.Services.CreateScope())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("../swagger/v1/swagger.json", "Social Media API v1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Social Media API v1");
         c.RoutePrefix = "swagger";
     });
 
+app.UseCors("AllowAll");
 app.UseHsts();
 app.UseRouting();
 app.UseSession();
