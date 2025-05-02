@@ -9,6 +9,7 @@ using Serilog;
 using Serilog.Events;
 using SocialMediaAPI.Constants;
 using SocialMediaAPI.Mappings;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -190,7 +191,7 @@ builder.Services.AddAuthentication(options =>
             ValidateIssuerSigningKey = true,
             ValidIssuer = jwtIssuer,
             ValidAudience = jwtAudience,
-            IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(jwtSecret))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
         };
 
         options.Events = new JwtBearerEvents
