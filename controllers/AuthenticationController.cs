@@ -202,7 +202,7 @@ public class AuthenticationController : ControllerBase
 
     [HttpGet]
     [Route("confirm-email")]
-    public async Task<IActionResult> ConfirmEmail(string userId, string token = "")
+    public async Task<IActionResult> ConfirmEmail(string userId, string token = "null")
     {
         try
         {
@@ -213,7 +213,7 @@ public class AuthenticationController : ControllerBase
                 return BadRequest(new {Status = "Error", message = "User not found"});
             }
 
-            if(string.IsNullOrEmpty(token))
+            if(token == "null")
             {
                 user = await _userManager.FindByIdAsync(userId);
 
