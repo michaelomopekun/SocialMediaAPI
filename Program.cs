@@ -1,4 +1,3 @@
-using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +15,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 DotNetEnv.Env.Load();
 
-// Replace the environment variable validation section
+Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII = true;
+
+
 var requiredEnvVars = new[] 
 { 
     "JWT_ISSUER",
@@ -177,6 +178,9 @@ builder.Services.AddAuthentication(options =>
         }
 
         Log.Information("Configuring JWT authentication");
+
+         options.RequireHttpsMetadata = false;
+        options.SaveToken = true;
         
         options.TokenValidationParameters = new TokenValidationParameters
         {
