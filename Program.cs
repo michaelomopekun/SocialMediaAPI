@@ -67,6 +67,17 @@ builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<IFollowRepository, FollowRepository>();
 builder.Services.AddScoped<IFollowService, FollowService>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<ICacheService, CacheService>();
+
+//Redis cache configuration
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = Environment.GetEnvironmentVariable("REDIS");
+    options.InstanceName = "SocialMediaAPI:";
+});
+
 
 // Add Swagger configuration
 builder.Services.AddSwaggerGen(c =>
@@ -115,6 +126,8 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+
+// Configure CORS policy
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 public class Register
 {
     [Required]
-    [EmailAddress]
+    [EmailAddress(ErrorMessage = "Invalid email address")]
     public string Email { get; set; } = string.Empty;
 
     [Required]
@@ -13,6 +13,7 @@ public class Register
     public string LastName { get; set; } = string.Empty;
 
     [Required]
+    [MinLength(3, ErrorMessage = "Username must be at least 3 characters")]
     public string UserName { get; set; } = string.Empty;
 
     [Required]

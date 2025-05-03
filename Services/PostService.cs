@@ -23,26 +23,16 @@ public class PostService : IPostService
 
     public async Task<PostResponseDTO> CreatePostAsync(CreatePostDTO createPostDTO, string userId)
     {
-        if (string.IsNullOrEmpty(createPostDTO.Content))
-        {
-            throw new ArgumentException("Post content cannot be empty");
-        }
-
         var post = new Post
         {
             Id = Nanoid.Generate(size, idLength),
             Content = createPostDTO.Content,
             ImageUrl = createPostDTO.ImageUrl,
-            UserId = userId.ToString(),
+            UserId = userId,
             CreatedAt = DateTime.UtcNow
         };
 
-        var createdPost = await _postRepository.CreatePostAsync(post);
-        if (createdPost == null)
-        {
-            _logger.LogError("CreatePostAsync::Error creating post: {Message}", "Post creation failed");
-            throw new Exception("CreatePostAsync::Error creating post: Post creation failed");
-        }        
+        var createdPost = await _postRepository.CreatePostAsync(post) ?? throw new Exception("CreatePostAsync::Error creating post: Post creation failed");      
 
         return _mapper.Map<PostResponseDTO>(createdPost);
     }
@@ -105,16 +95,9 @@ public class PostService : IPostService
             _logger.LogError("UpdatePostAsync::Error updating post: {Message}", "You cannot update this post");
             throw new UnauthorizedAccessException("You cannot update this post");
         }
-
-        if (string.IsNullOrEmpty(updatePostDTO.Content))
-        {
-            throw new ArgumentException("Post content cannot be empty");
-        }
-
    
         existingPost.Content = updatePostDTO.Content;
         existingPost.ImageUrl = updatePostDTO.ImageUrl;
-        // existingPost.UserId = userId.ToString();
         existingPost.UpdatedAt = DateTime.UtcNow;
 
         var updatedPost = await _postRepository.UpdatePostAsync(id, existingPost);
@@ -131,21 +114,6 @@ public class PostService : IPostService
     {
         try
         {
-            if (string.IsNullOrEmpty(postId))
-            {
-                throw new ArgumentException("Post ID cannot be empty");
-            }
-
-            if (string.IsNullOrEmpty(userId))
-            {
-                throw new ArgumentException("User ID cannot be empty");
-            }
-            
-            if (string.IsNullOrEmpty(createCommentDTO.Content))
-            {
-                throw new ArgumentException("Comment content cannot be empty");
-            }
-
             var comment = new Comment
             {
                 Id = Nanoid.Generate(size, 8),
@@ -173,21 +141,6 @@ public class PostService : IPostService
 
     public  async Task<CommentResponseDTO?> UpdateCommentAsync(string commentId, string userId, UpdateCommentDTO updateCommentDTO)
     {
-        if (string.IsNullOrEmpty(commentId))
-        {
-            throw new ArgumentException("Comment ID cannot be empty");
-        }
-
-        if (string.IsNullOrEmpty(userId))
-        {
-            throw new ArgumentException("User ID cannot be empty");
-        }
-
-        if (string.IsNullOrEmpty(updateCommentDTO.Content))
-        {
-            throw new ArgumentException("Comment content cannot be empty");
-        }
-
         try
         {
             var existingComment = await _commentRepository.GetCommentByIdAsync(commentId);
@@ -224,16 +177,6 @@ public class PostService : IPostService
 
     public async Task<bool> DeleteCommentAsync(string commentId, string userId)
     {
-        if (string.IsNullOrEmpty(commentId))
-        {
-            throw new ArgumentException("Comment ID cannot be empty");
-        }
-
-        if (string.IsNullOrEmpty(userId))
-        {
-            throw new ArgumentException("User ID cannot be empty");
-        }
-
         var isDeleted = await _commentRepository.DeleteCommentAsync(commentId);
 
         return isDeleted;
@@ -241,14 +184,10 @@ public class PostService : IPostService
 
     public async Task<IEnumerable<CommentResponseDTO>> GetPostCommentsAsync(string postId, int pageNumber = 1, int pageSize = 10)
     {
-        if(string.IsNullOrEmpty(postId))
+        if(pageNumber < 1|| pageSize < 1)
         {
-            throw new ArgumentException("Post ID cannot be empty");
-        }
-
-        if(pageNumber < 1)
-        {
-            throw new ArgumentException("Page number must be greater than 0");
+            _logger.LogError("GetPostCommentsAsync::Error getting comments: {Message}", "Page number and size must be greater than 0");
+            throw new ArgumentException("Page number and size must be greater than 0");
         }
 
         var comments = await _commentRepository.GetCommentsByPostIdAsync(postId, pageNumber, pageSize);
@@ -263,11 +202,6 @@ public class PostService : IPostService
 
     public async Task<CommentResponseDTO?> GetCommentByIdAsync(string commentId)
     {
-        if(string.IsNullOrEmpty(commentId))
-        {
-            throw new ArgumentException("Comment ID cannot be empty");
-        }
-
         var comment = await _commentRepository.GetCommentByIdAsync(commentId);
         if (comment == null)
         {

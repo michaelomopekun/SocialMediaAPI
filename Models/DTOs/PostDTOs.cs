@@ -1,27 +1,47 @@
+using System.ComponentModel.DataAnnotations;
 
 namespace SocialMediaAPI.Models.DTOs
 {
     public class CreatePostDTO
     {
-        public string? Content {get; set;}
-        public string? ImageUrl {get; set;}
+        [Required(ErrorMessage = "Content is required.")]
+        [StringLength(500, MinimumLength = 1, ErrorMessage = "Content must be between 1 and 500 characters.")]
+        public string? Content { get; set; }
+
+        [Url(ErrorMessage = "ImageUrl must be a valid URL.")]
+        public string? ImageUrl { get; set; }
     }
 
     public class UpdatePostDTO
     {
-        public string? Content {get; set;}
-        public string? ImageUrl {get; set;}
+        [StringLength(500, ErrorMessage = "Content must not exceed 500 characters.")]
+        public string? Content { get; set; }
+
+        [Url(ErrorMessage = "ImageUrl must be a valid URL.")]
+        public string? ImageUrl { get; set; }
     }
+
     public class PostResponseDTO
     {
-        public string Id {get; set;} = string.Empty;
-        public string Content {get; set;} = string.Empty;
-        public string? ImageUrl {get; set;}
-        public DateTime CreatedAt {get; set;}
-        public DateTime UpdatedAt {get; set;}
-        public string UserId {get; set;} = string.Empty;
-        public string UserName {get; set;} = string.Empty;
-        public string ? LikesCount {get; set;}
-        public string ? CommentsCount {get; set;}
+        [Required]
+        public string Id { get; set; } = string.Empty;
+
+        [Required]
+        public string Content { get; set; } = string.Empty;
+
+        [Url(ErrorMessage = "ImageUrl must be a valid URL.")]
+        public string? ImageUrl { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+
+        [Required]
+        public string UserId { get; set; } = string.Empty;
+
+        [Required]
+        public string UserName { get; set; } = string.Empty;
+
+        public string? LikesCount { get; set; }
+        public string? CommentsCount { get; set; }
     }
 }

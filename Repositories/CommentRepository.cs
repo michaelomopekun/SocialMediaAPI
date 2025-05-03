@@ -49,11 +49,6 @@ public class CommentRepository : ICommentRepository
 
     public async Task<Comment> GetCommentByIdAsync(string id)
     {
-        if(string.IsNullOrEmpty(id))
-        {
-            throw new ArgumentException("Comment ID cannot be null or empty.", nameof(id));
-        }
-
         try
         {
             return await _context.Comments
@@ -69,11 +64,6 @@ public class CommentRepository : ICommentRepository
 
     public async Task<IEnumerable<Comment>> GetCommentsByPostIdAsync(string postId, int pageNumber = 1, int pageSize = 10)
     {
-        if(string.IsNullOrEmpty(postId))
-        {
-            throw new ArgumentException("Post ID cannot be null or empty.", nameof(postId));
-        }
-
         try
         {
             var cacheKey = $"comments_post_{postId}_{pageNumber}_{pageSize}";
@@ -103,11 +93,6 @@ public class CommentRepository : ICommentRepository
 
     public async Task<IEnumerable<Comment>> GetCommentsByUserIdAsync(string userId, int pageNumber = 1, int pageSize = 10)
     {
-        if (string.IsNullOrEmpty(userId))
-        {
-            throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
-        }
-
         try
         {
             var cacheKey = $"comments_user_{userId}_{pageNumber}_{pageSize}";
@@ -138,19 +123,6 @@ public class CommentRepository : ICommentRepository
 
     public async Task<Comment> CreateCommentAsync(Comment comment)
     {
-        if(comment == null)
-        {
-            throw new ArgumentNullException(nameof(comment), "Comment cannot be null.");
-        }
-        if(string.IsNullOrEmpty(comment.PostId))
-        {
-            throw new ArgumentException("Post ID cannot be null or empty.", nameof(comment.PostId));
-        }
-        if(string.IsNullOrEmpty(comment.UserId))
-        {
-            throw new ArgumentException("User ID cannot be null or empty.", nameof(comment.UserId));
-        }
-
         try
         {
 
@@ -168,27 +140,6 @@ public class CommentRepository : ICommentRepository
 
     public async Task<Comment> UpdateCommentAsync(string id, Comment comment)
     {
-        if(string.IsNullOrEmpty(id))
-        {
-            throw new ArgumentException("Comment ID cannot be null or empty.", nameof(id));
-        }
-        if(comment == null)
-        {
-            throw new ArgumentNullException(nameof(comment), "Comment cannot be null.");
-        }
-        if(string.IsNullOrEmpty(comment.Content))
-        {
-            throw new ArgumentException("Comment content cannot be null or empty.", nameof(comment.Content));
-        }
-        if(string.IsNullOrEmpty(comment.PostId))
-        {
-            throw new ArgumentException("Post ID cannot be null or empty.", nameof(comment.PostId));
-        }
-        if(string.IsNullOrEmpty(comment.UserId))
-        {
-            throw new ArgumentException("User ID cannot be null or empty.", nameof(comment.UserId));
-        }
-
         try
         {
             var existingComment = await _context.Comments.FindAsync(id) ?? throw new KeyNotFoundException($"Comment with ID {id} not found.");
@@ -212,11 +163,6 @@ public class CommentRepository : ICommentRepository
 
     public async Task<bool> DeleteCommentAsync(string id)
     {
-        if(string.IsNullOrEmpty(id))
-        {
-            throw new ArgumentException("Comment ID cannot be null or empty.", nameof(id));
-        }
-
         try
         {
             var comment = _context.Comments.Find(id) ?? throw new KeyNotFoundException($"Comment with ID {id} not found.");
@@ -237,11 +183,6 @@ public class CommentRepository : ICommentRepository
 
     public async Task<bool> CommentExistsAsync(string id)
     {
-        if(string.IsNullOrEmpty(id))
-        {
-            throw new ArgumentException("Comment ID cannot be null or empty.", nameof(id));
-        }
-
         try
         {
             return await _context.Comments.AnyAsync(c => c.Id == id);
