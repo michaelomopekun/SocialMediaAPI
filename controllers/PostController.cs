@@ -318,22 +318,13 @@ public class PostController : ControllerBase
     {
         try
         {
-            if (string.IsNullOrEmpty(postId) || string.IsNullOrEmpty(commentId))
-            {
-                return BadRequest(new { Status = "Error", Message = "Post ID and Comment ID are required" });
-            }
-
+            if (string.IsNullOrEmpty(postId) || string.IsNullOrEmpty(commentId)) return BadRequest(new { Status = "Error", Message = "Post ID and Comment ID are required" });
+            
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { Status = "Error", Message = "User not authorized" });
-            }
+            if (string.IsNullOrEmpty(userId)) return Unauthorized(new { Status = "Error", Message = "User not authorized" });
 
             var updatedComment = await _postService.UpdateCommentAsync(commentId, userId, updateCommentDTO);
-            if (updatedComment == null)
-            {
-                return NotFound(new { Status = "Error", Message = "Comment not found" });
-            }
+            if (updatedComment == null) return NotFound(new { Status = "Error", Message = "Comment not found" });
 
             return Ok(new { Status = "Success", Data = updatedComment });
         }

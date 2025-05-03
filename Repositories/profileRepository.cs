@@ -19,8 +19,6 @@ public class ProfileRepository : IProfileRepository
     {
         try
         {
-            if (profile == null) throw new ArgumentNullException(nameof(profile), "Profile cannot be null");
-
             await _context.Users.AddAsync(profile);
             await _context.SaveChangesAsync();
 
@@ -40,10 +38,7 @@ public class ProfileRepository : IProfileRepository
         try
         {
             var profile = await _context.Users.FindAsync(id);
-            if (profile == null)
-            {
-                return false;
-            }
+            if (profile == null) return false;
 
             _context.Users.Remove(profile);
             await _context.SaveChangesAsync();
@@ -63,11 +58,6 @@ public class ProfileRepository : IProfileRepository
     {
         try
         {
-            if (pageNumber < 1 || pageSize < 1)
-            {
-                throw new ArgumentException("Page number and page size must be greater than 0", nameof(pageNumber));
-            }
-
             var profiles = await _context.Users
                 .AsNoTracking()
                 .OrderBy(u => u.UserName)
@@ -195,9 +185,8 @@ public class ProfileRepository : IProfileRepository
     {
         try
         {
-            if (profile == null) throw new ArgumentNullException(nameof(profile), "Profile cannot be null");
-
-            var existingProfile = await _context.Users.FindAsync(id) ?? throw new Exception($"Profile with ID {id} not found");
+            var existingProfile = await _context.Users.FindAsync(id);
+            if (existingProfile == null) return null;
 
             existingProfile.Bio = profile.Bio;
             existingProfile.DateOfBirth = profile.DateOfBirth;

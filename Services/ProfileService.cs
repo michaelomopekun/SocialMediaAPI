@@ -24,8 +24,6 @@ public class ProfileService : IProfileService
         _logger.LogInformation("CreateProfileAsync::Creating profile for user: {UserId}", userId);
         try
         {
-            if(createProfileDTO == null) throw new ArgumentNullException(nameof(createProfileDTO), "Profile cannot be null");
-
             var existingProfile = await _profileRepository.GetProfileByIdAsync(userId);
             if(existingProfile != null)
             {
@@ -42,7 +40,7 @@ public class ProfileService : IProfileService
                 PhoneNumber = createProfileDTO.PhoneNumber
             };
 
-            var createdProfile = await _profileRepository.CreateProfileAsync(profile) ?? throw new Exception("Error creating profile");
+            var createdProfile = await _profileRepository.CreateProfileAsync(profile);
 
             var profileResponse = _mapper.Map<ProfileResponseDTO>(createdProfile);
 
@@ -64,8 +62,6 @@ public class ProfileService : IProfileService
     {
         try
         {
-            if (pageNumber < 1 || pageSize < 1) throw new ArgumentException("Page number and page size must be greater than 0", nameof(pageNumber));
-
             var profiles = await _profileRepository.GetAllProfilesAsync(pageNumber, pageSize);
             
             return _mapper.Map<IEnumerable<ProfileResponseDTO>>(profiles);
@@ -90,7 +86,8 @@ public class ProfileService : IProfileService
                 return cached;
             }
 
-            var profile = await _profileRepository.GetProfileByIdAsync(id) ?? throw new Exception($"Profile with id {id} not found");
+            var profile = await _profileRepository.GetProfileByIdAsync(id);
+            if (profile == null) return null;
 
             var profileResponse = _mapper.Map<ProfileResponseDTO>(profile);
 
@@ -125,7 +122,8 @@ public class ProfileService : IProfileService
                 return cached;
             }
 
-            var profile = await _profileRepository.GetProfileByUserNameAsync(userName) ?? throw new Exception($"Profile with UserName {userName} not found");;
+            var profile = await _profileRepository.GetProfileByUserNameAsync(userName);
+            if (profile == null) return null;
 
             var profileResponse = _mapper.Map<ProfileResponseDTO>(profile);
 
@@ -152,13 +150,8 @@ public class ProfileService : IProfileService
 
     public async Task<ProfileResponseDTO?> UpdateProfileAsync(string userId, UpdateProfileDTO updateProfileDTO)
     {
-        if (updateProfileDTO == null) throw new ArgumentNullException(nameof(updateProfileDTO), "Profile cannot be null");
-
         var existingProfile = await _profileRepository.GetProfileByIdAsync(userId);
-        if (existingProfile == null)
-        {
-            throw new Exception($"Profile with id {userId} not found");
-        }
+        if (existingProfile == null) return null;
 
         existingProfile.Bio = updateProfileDTO.Bio;
         existingProfile.ProfilePictureUrl = updateProfileDTO.ProfilePictureUrl;

@@ -20,8 +20,6 @@ public class FollowRepository : IFollowRepository
 
     public async Task<Follow> AddFollowAsync(Follow follow)
     {
-        if(follow == null) throw new ArgumentNullException(nameof(follow), "AddFollowAsync::Follow cannot be null");
-
         try
         {
             await _context.Follows.AddAsync(follow);
@@ -44,7 +42,9 @@ public class FollowRepository : IFollowRepository
     {
         try
         {
-            var blockedUser = _context.Follows.FirstOrDefault(f => f.FollowerUserId == blockedUserId && f.FollowingUserId == userId) ?? throw new ArgumentException("Blocked user not found", nameof(blockedUserId));
+            var blockedUser = _context.Follows.FirstOrDefault(f => f.FollowerUserId == blockedUserId && f.FollowingUserId == userId);
+
+            if (blockedUser == null) return false;
         
             blockedUser.IsBlocked = true;
             await _context.SaveChangesAsync();
@@ -100,8 +100,8 @@ public class FollowRepository : IFollowRepository
         {
             var follow = await _context.Follows
                 .FirstOrDefaultAsync(f => f.FollowerUserId == followerId && 
-                                        f.FollowingUserId == followingId) ?? throw new ArgumentException("Follow not found", nameof(followingId));
-                
+                                        f.FollowingUserId == followingId);
+ 
             return follow;
         }
         catch (Exception ex)
@@ -223,7 +223,8 @@ public class FollowRepository : IFollowRepository
     {
         try
         {
-            var blockedUser = await _context.Follows.FirstOrDefaultAsync(f => f.FollowerUserId == blockedUserId && f.FollowingUserId == userId) ?? throw new ArgumentException("Blocked user not found", nameof(blockedUserId));
+            var blockedUser = await _context.Follows.FirstOrDefaultAsync(f => f.FollowerUserId == blockedUserId && f.FollowingUserId == userId);
+            if (blockedUser == null) return false;
         
             blockedUser.IsBlocked = false;
             await _context.SaveChangesAsync();
@@ -241,7 +242,8 @@ public class FollowRepository : IFollowRepository
     {
         try
         {
-            var follow = await _context.Follows.FirstAsync(f => f.Id.ToString() == id) ?? throw new ArgumentException("UnFollowAsync::Follow not found", nameof(id));
+            var follow = await _context.Follows.FirstAsync(f => f.Id.ToString() == id);
+            if (follow == null) return false;
         
             _context.Follows.Remove(follow);
             await _context.SaveChangesAsync();
@@ -259,7 +261,8 @@ public class FollowRepository : IFollowRepository
     {
         try
         {
-            var follows = await _context.Follows.FindAsync(id) ?? throw new ArgumentException("UpdateFollowAsync::Follow not found", nameof(id));
+            var follows = await _context.Follows.FindAsync(id);
+            if (follows == null) return null;
 
             follows.IsBlocked = follow.IsBlocked;
             follows.FollowerUserId = follow.FollowerUserId;

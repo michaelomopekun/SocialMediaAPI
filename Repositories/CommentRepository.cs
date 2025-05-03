@@ -9,7 +9,7 @@ public class CommentRepository : ICommentRepository
     private readonly IPostRepository _postRepository;
     private readonly ILogger<CommentRepository> _logger;
     private readonly IMemoryCache _cache;
-    private const int CACHE_DURATION = 10;
+    private const int CACHE_DURATION = 30;
 
     public CommentRepository(ApplicationDbContext context, IPostRepository postRepository, ILogger<CommentRepository> logger, IMemoryCache cache)
     {
@@ -51,9 +51,13 @@ public class CommentRepository : ICommentRepository
     {
         try
         {
-            return await _context.Comments
-            .Include(c => c.User)
-            .FirstOrDefaultAsync(i => i.Id == id) ?? throw new KeyNotFoundException($"Comment with ID {id} not found.");
+            var comment = await _context.Comments
+                .Include(c => c.User)
+                .FirstOrDefaultAsync(i => i.Id == id);
+
+            if (comment == null) return null;
+
+            return comment;
         }
         catch(Exception ex)
         {
@@ -142,7 +146,8 @@ public class CommentRepository : ICommentRepository
     {
         try
         {
-            var existingComment = await _context.Comments.FindAsync(id) ?? throw new KeyNotFoundException($"Comment with ID {id} not found.");
+            var existingComment = await _context.Comments.FindAsync(id);
+            if (existingComment == null) return null;
 
             _cache.Remove($"comments_post_{existingComment.PostId}");
             _cache.Remove($"comments_post_{comment.PostId}");
@@ -165,7 +170,8 @@ public class CommentRepository : ICommentRepository
     {
         try
         {
-            var comment = _context.Comments.Find(id) ?? throw new KeyNotFoundException($"Comment with ID {id} not found.");
+            var comment = await _context.Comments.FindAsync(id);
+            if (comment == null) return false;
 
             _cache.Remove($"comments_post_{comment.PostId}_1_10");
             _cache.Remove($"comments_post_{comment.PostId}_2_10");
@@ -198,7 +204,8 @@ public class CommentRepository : ICommentRepository
     {
         try
         {
-            var post = await _context.Posts.FindAsync(postId) ?? throw new KeyNotFoundException($"Post with ID {postId} not found.");
+            var post = await _context.Posts.FindAsync(postId);
+            if (post == null) return null;
             
             comment.Post = post;
             await _context.Comments.AddAsync(comment);

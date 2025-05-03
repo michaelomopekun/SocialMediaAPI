@@ -32,7 +32,7 @@ public class PostService : IPostService
             CreatedAt = DateTime.UtcNow
         };
 
-        var createdPost = await _postRepository.CreatePostAsync(post) ?? throw new Exception("CreatePostAsync::Error creating post: Post creation failed");      
+        var createdPost = await _postRepository.CreatePostAsync(post);      
 
         return _mapper.Map<PostResponseDTO>(createdPost);
     }
@@ -48,11 +48,7 @@ public class PostService : IPostService
         }
 
         var isDeleted = await _postRepository.DeletePostAsync(id);
-        if (!isDeleted)
-        {
-            _logger.LogError("DeletePostAsync::Error deleting post: {Message}", "Post deletion failed");
-            throw new Exception("DeletePostAsync::Error deleting post: Post deletion failed");
-        }
+        if (!isDeleted) return false;
 
         return isDeleted;
     }
@@ -84,28 +80,14 @@ public class PostService : IPostService
     public async Task<PostResponseDTO?> UpdatePostAsync(string id, UpdatePostDTO updatePostDTO, string userId)
     {
         var existingPost = await _postRepository.GetPostByIdAsync(id);
-        if (existingPost == null)
-        {
-            _logger.LogError("UpdatePostAsync::Error updating post: {Message}", "Post not found");
-            throw new Exception("UpdatePostAsync::Error updating post: Post not found");
-        }
-
-        if (existingPost.UserId != userId)
-        {
-            _logger.LogError("UpdatePostAsync::Error updating post: {Message}", "You cannot update this post");
-            throw new UnauthorizedAccessException("You cannot update this post");
-        }
+        if (existingPost == null) return null;
    
         existingPost.Content = updatePostDTO.Content;
         existingPost.ImageUrl = updatePostDTO.ImageUrl;
         existingPost.UpdatedAt = DateTime.UtcNow;
 
         var updatedPost = await _postRepository.UpdatePostAsync(id, existingPost);
-        if (updatedPost == null)
-        {
-            _logger.LogError("UpdatePostAsync::Error updating post: {Message}", "Post update failed");
-            throw new Exception("UpdatePostAsync::Error updating post: Post update failed");
-        }
+        if (updatedPost == null) return null;
 
         return _mapper.Map<PostResponseDTO>(updatedPost);
     }
@@ -124,11 +106,7 @@ public class PostService : IPostService
             };
 
             var createdComment = await _commentRepository.AddCommentToPostAsync(postId, comment);
-            if (createdComment == null)
-            {
-                _logger.LogError("AddCommentToPostAsync::Error adding comment: {Message}", "Comment addition failed");
-                throw new Exception("AddCommentToPostAsync::Error adding comment: Comment addition failed");
-            }
+            if (createdComment == null) return null;
 
             return _mapper.Map<CommentResponseDTO>(createdComment);
         }
@@ -144,27 +122,13 @@ public class PostService : IPostService
         try
         {
             var existingComment = await _commentRepository.GetCommentByIdAsync(commentId);
-            if (existingComment == null)
-            {
-                _logger.LogError("UpdateCommentAsync::Error updating comment: {Message}", "Comment not found");
-                throw new Exception("UpdateCommentAsync::Error updating comment: Comment not found");
-            }
-
-            if (existingComment.UserId != userId)
-            {
-                _logger.LogError("UpdateCommentAsync::Error updating comment: {Message}", "You cannot update this comment");
-                throw new UnauthorizedAccessException("You cannot update this comment");
-            }
+            if (existingComment == null) return null;
 
             existingComment.Content = updateCommentDTO.Content;
             existingComment.UpdatedAt = DateTime.UtcNow;
 
             var updatedComment = await _commentRepository.UpdateCommentAsync(commentId, existingComment);
-            if (updatedComment == null)
-            {
-                _logger.LogError("UpdateCommentAsync::Error updating comment: {Message}", "Comment update failed");
-                throw new Exception("UpdateCommentAsync::Error updating comment: Comment update failed");
-            }
+            if (updatedComment == null) return null;
 
             return _mapper.Map<CommentResponseDTO>(updatedComment);
         }
@@ -184,18 +148,8 @@ public class PostService : IPostService
 
     public async Task<IEnumerable<CommentResponseDTO>> GetPostCommentsAsync(string postId, int pageNumber = 1, int pageSize = 10)
     {
-        if(pageNumber < 1|| pageSize < 1)
-        {
-            _logger.LogError("GetPostCommentsAsync::Error getting comments: {Message}", "Page number and size must be greater than 0");
-            throw new ArgumentException("Page number and size must be greater than 0");
-        }
-
         var comments = await _commentRepository.GetCommentsByPostIdAsync(postId, pageNumber, pageSize);
-        if(comments == null)
-        {
-            _logger.LogError("GetPostCommentsAsync::Error getting comments: {Message}", "No comments found for this post");
-            throw new Exception("GetPostCommentsAsync::Error getting comments: No comments found for this post");
-        }
+        if(comments == null) return null;
 
         return _mapper.Map<IEnumerable<CommentResponseDTO>>(comments);
     }
@@ -203,11 +157,7 @@ public class PostService : IPostService
     public async Task<CommentResponseDTO?> GetCommentByIdAsync(string commentId)
     {
         var comment = await _commentRepository.GetCommentByIdAsync(commentId);
-        if (comment == null)
-        {
-            _logger.LogError("GetCommentByIdAsync::Error getting comment: {Message}", "Comment not found");
-            throw new Exception("GetCommentByIdAsync::Error getting comment: Comment not found");
-        }
+        if (comment == null) return null;
 
         return _mapper.Map<CommentResponseDTO>(comment);
     }

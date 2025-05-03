@@ -39,11 +39,8 @@ public class PostRepository : IPostRepository
     {
         try
         {
-            var post = _context.Posts.Find(Id);
-            if (post == null)
-            {
-                return false;
-            }
+            var post = await _context.Posts.FindAsync(Id);
+            if (post == null) return false;
 
             _context.Posts.Remove(post);
             await _context.SaveChangesAsync();
@@ -152,10 +149,7 @@ public class PostRepository : IPostRepository
                 var cacheOptions = new MemoryCacheEntryOptions()
                     .SetSlidingExpiration(TimeSpan.FromMinutes(CACHE_DURATION));
 
-                if (post == null)
-                {
-                    throw new KeyNotFoundException($"Post with id {id} not found");
-                }
+                if (post == null) return null!;
 
                 _cache.Set(cacheKey, post, cacheOptions);
             }
