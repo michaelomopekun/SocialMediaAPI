@@ -29,6 +29,12 @@ namespace SocialMediaAPI.Mappings
                     opt => opt.MapFrom(src => src.User != null ? src.User.UserName : string.Empty));
             CreateMap<CreateCommentDTO, Comment>();
             CreateMap<UpdateCommentDTO, Comment>();
+            CreateMap<Follow, FollowResponseDTO>();
+            CreateMap<Follow, FollowRequestDTO>();
+            CreateMap<Profile, ProfileResponseDTO>();
+            CreateMap<Profile, CreateProfileDTO>();
+            CreateMap<Profile, UpdateProfileDTO>();
+            CreateMap<Profile, ProfileResponseDTO>();
         }
     }
 }
