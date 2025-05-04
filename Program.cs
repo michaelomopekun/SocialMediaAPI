@@ -70,6 +70,7 @@ builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<ICacheService, CacheService>();
+builder.Services.AddScoped<FeedScoreCalculator>();
 
 //Redis cache configuration
 builder.Services.AddStackExchangeRedisCache(options =>

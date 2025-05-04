@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SocialMediaAPI.Models.DTOs;
+using SocialMediaAPI.Services;
 
 [Authorize]
 [ApiController]
@@ -13,14 +14,19 @@ public class PostController : ControllerBase
 
     private readonly IPostService _postService;
     private readonly ILogger<PostController> _logger;
+    private readonly ILikeService _likeService;
 
-    public PostController(IPostService postService, ILogger<PostController> logger)
+    public PostController(IPostService postService, ILogger<PostController> logger, ILikeService likeService)
     {
         _postService = postService;
         _logger = logger;
+        _likeService = likeService;
     }
 
     [HttpGet]
+    [ProducesResponseType(typeof(IEnumerable<PostResponseDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<PostResponseDTO>>> GetAllPosts([FromQuery] int pageNumber=1, [FromQuery] int pageSize=10)
     {
         try
@@ -41,6 +47,9 @@ public class PostController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [ProducesResponseType(typeof(PostResponseDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<PostResponseDTO>> GetPost(string id)
     {
         try
@@ -61,6 +70,10 @@ public class PostController : ControllerBase
     }
 
     [HttpPost]
+    [ProducesResponseType(typeof(PostResponseDTO), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<PostResponseDTO>> CreatePost([FromBody] CreatePostDTO createPostDTO)
     {
         try
@@ -87,6 +100,11 @@ public class PostController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [ProducesResponseType(typeof(PostResponseDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<PostResponseDTO>> UpdatePost(string id, [FromBody] UpdatePostDTO updatePostDTO)
     {
         try
@@ -117,6 +135,11 @@ public class PostController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult> DeletePost(string id)
     {
         try
@@ -147,6 +170,10 @@ public class PostController : ControllerBase
     }
 
     [HttpGet("user/{userId}")]
+    [ProducesResponseType(typeof(IEnumerable<PostResponseDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<IEnumerable<PostResponseDTO>>> GetPostsByUser(string userId
     // , [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10
     )
@@ -169,7 +196,11 @@ public class PostController : ControllerBase
     }
 
     [HttpGet("feed")]
-    public async Task<ActionResult<IEnumerable<PostResponseDTO>>> GetFeed()
+    [ProducesResponseType(typeof(IEnumerable<PostResponseDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<IEnumerable<PostResponseDTO>>> GetFeed([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         try
         {
@@ -179,13 +210,21 @@ public class PostController : ControllerBase
                 return Unauthorized(new { Status = "Error", Message = "User not authorized" });
             }
 
-            var posts = await _postService.GetFollowersPostsAsync(userId);
+            var posts = await _postService.GetFeedAsync(userId, pageNumber, pageSize);
             if (posts == null || !posts.Any())
             {
                 return NotFound(new { Status = "Error", Message = "No posts found in feed" });
             }
 
-            return Ok(new { Status = "Success", Data = posts });
+            return Ok(new { 
+                Status = "Success", 
+                Data = posts,
+                Pagination = new {
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    HasMore = posts.Count() >= pageSize
+                }
+            });
         }
         catch (Exception ex)
         {
@@ -196,6 +235,10 @@ public class PostController : ControllerBase
 
 
     [HttpPost("{postId}/comments")]
+    [ProducesResponseType(typeof(CreateCommentDTO), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<CreateCommentDTO>> AddCommentToPost(string postId, [FromBody] CreateCommentDTO createCommentDTO)
     {
         try
@@ -223,6 +266,10 @@ public class PostController : ControllerBase
 
 
     [HttpGet("{postId}/comments")]
+    [ProducesResponseType(typeof(IEnumerable<CommentResponseDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IEnumerable<CommentResponseDTO>>> GetPostComments(string postId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
         try
@@ -254,6 +301,10 @@ public class PostController : ControllerBase
 
 
     [HttpGet("{postId}/comments/{commentId}")]
+    [ProducesResponseType(typeof(CommentResponseDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<CommentResponseDTO>> GetComment(string postId, string commentId)
     {
         try
@@ -279,6 +330,11 @@ public class PostController : ControllerBase
 
 
     [HttpDelete("{postId}/comments/{commentId}")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult> DeleteComment(string postId, string commentId)
     {
         try
@@ -314,6 +370,11 @@ public class PostController : ControllerBase
     }
 
     [HttpPut("{postId}/comments/{commentId}")]
+    [ProducesResponseType(typeof(CommentResponseDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<CommentResponseDTO>> UpdateComment(string postId, string commentId, [FromBody] UpdateCommentDTO updateCommentDTO)
     {
         try
@@ -339,6 +400,62 @@ public class PostController : ControllerBase
         }
     }
     
+
+    [HttpPost("{postId}/like")]
+    [ProducesResponseType(typeof(LikeResponseDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<LikeResponseDTO>> ToggleLike(string postId, [FromBody] ToggleLikeDTO request)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { Status = "Error", Message = "User not authorized" });
+            }
+
+            request.PostId = postId;
+            
+            var response = await _likeService.ToggleLikeAsync(
+                userId, 
+                request.PostId, 
+                request.CommentId, 
+                request.ReactionType);
+
+            return Ok(new { Status = "Success", Data = response });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error toggling like for post {PostId}", postId);
+            return StatusCode(500, new { Status = "Error", Message = "Error toggling like" });
+        }
+    }
+
+    [HttpGet("{postId}/likes")]
+    [ProducesResponseType(typeof(LikeStatusDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<LikeStatusDTO>> GetLikeStatus(string postId, [FromQuery] string? commentId = null)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { Status = "Error", Message = "User not authorized" });
+            }
+
+            var status = await _likeService.GetLikeStatusAsync(postId, userId, commentId);
+            return Ok(new { Status = "Success", Data = status });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting like status for post {PostId}", postId);
+            return StatusCode(500, new { Status = "Error", Message = "Error getting like status" });
+        }
+    }
+
 
     private ObjectResult Forbidden(object value)
     {

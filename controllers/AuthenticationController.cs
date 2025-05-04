@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using NanoidDotNet;
 using SocialMediaAPI.Constants;
 using SocialMediaAPI.Models.Domain.User;
+using Microsoft.AspNetCore.Authorization;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -31,6 +32,10 @@ public class AuthenticationController : ControllerBase
 
     [HttpPost]
     [Route("register")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] Register register)
     {
         try
@@ -119,6 +124,10 @@ public class AuthenticationController : ControllerBase
 
     [HttpPost]
     [Route("login")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] Login login)
     {
         try
@@ -202,6 +211,9 @@ public class AuthenticationController : ControllerBase
 
     [HttpGet]
     [Route("confirm-email")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ConfirmEmail(string userId, string token = "null")
     {
         try
@@ -262,6 +274,33 @@ public class AuthenticationController : ControllerBase
         {
             _logger.LogError("{Error}: Error confirming email for user: {UserId}", ex.InnerException?.Message, userId);
             return StatusCode(500, new {Status = "Error", message = "CONFIRM EMAIL :endpoint: Error confirming email", errorMessage = ex.Message});
+        }
+    }
+
+    [HttpPost]
+    [Route("logout")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> Logout()
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId)) return BadRequest(new { Status = "Error", Message = "User not found" });
+
+            // Clear session
+            HttpContext.Session.Clear();
+
+            _logger.LogInformation("User {UserId} logged out successfully", userId);
+
+            return Ok(new { Status = "Success", Message = "Logged out successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("{Error}: Error logging out user", ex.InnerException?.Message);
+            return StatusCode(500, new { Status = "Error", Message = "Error during logout", ErrorMessage = ex.Message });
         }
     }
 }    

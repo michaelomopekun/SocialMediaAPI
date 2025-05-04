@@ -7,17 +7,20 @@ public class PostService : IPostService
 {
     private readonly IPostRepository _postRepository;
     private readonly ICommentRepository _commentRepository;
+    private readonly ICacheService _cacheService;
+    private readonly FeedScoreCalculator _scoreCalculator;
     private readonly IMapper _mapper;
     private readonly ILogger<PostService> _logger;
     private const string size = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     private const int idLength = 8;
 
-    public PostService(IPostRepository postRepository, IMapper mapper, ILogger<PostService> logger, ICommentRepository commentRepository)
+    public PostService(IPostRepository postRepository, IMapper mapper, ILogger<PostService> logger, ICommentRepository commentRepository, ICacheService cacheService, FeedScoreCalculator scoreCalculator)
     {
-        _postRepository = postRepository;
-        _commentRepository = commentRepository;
-        _mapper = mapper;
+        _cacheService = cacheService;
+        _scoreCalculator = scoreCalculator;
         _logger = logger;
+        _postRepository = postRepository;
+        _mapper = mapper;
     }
 
 
@@ -59,10 +62,44 @@ public class PostService : IPostService
         return _mapper.Map<IEnumerable<PostResponseDTO>>(posts);
     }
 
-    public async Task<IEnumerable<PostResponseDTO>> GetFollowersPostsAsync(string userId)
+    public async Task<IEnumerable<PostResponseDTO>> GetFeedAsync(string userId, int pageNumber = 1, int pageSize = 10)
     {
-        var posts = await _postRepository.GetFollowersPostsAsync(userId, 1, 10);       
-        return _mapper.Map<IEnumerable<PostResponseDTO>>(posts);
+        try
+        {
+            var cachedFeed = await _cacheService.GetFeedCacheAsync(userId, pageNumber, pageSize);
+            if (cachedFeed != null)
+            {
+                return cachedFeed;
+            }
+
+            var posts = await _postRepository.GetFollowersPostsAsync(userId, pageNumber * 2, pageSize * 2);
+            if (!posts.Any())
+            {
+                return Enumerable.Empty<PostResponseDTO>();
+            }
+
+            var now = DateTime.UtcNow;
+            var scoredPosts = await Task.WhenAll(posts.Select(async post => new
+            {
+                Post = post,
+                Score = await _scoreCalculator.CalculateScore(post, userId, now)
+            }));
+
+            var orderedPosts = scoredPosts
+                .OrderByDescending(x => x.Score)
+                .Take(pageSize)
+                .Select(x => _mapper.Map<PostResponseDTO>(x.Post))
+                .ToList();
+
+            await _cacheService.SetFeedCacheAsync(userId, orderedPosts, pageNumber, pageSize);
+
+            return orderedPosts;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating feed for user {UserId}", userId);
+            throw;
+        }
     }
 
     public async Task<PostResponseDTO?> GetPostByIdAsync(string id)

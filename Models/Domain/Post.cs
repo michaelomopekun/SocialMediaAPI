@@ -63,7 +63,9 @@ public enum ReactionType
     Haha = 3,
     Wow = 4,
     Sad = 5,
-    Angry = 6
+    Angry = 6,
+    DisLike = 7,
+    Care = 8
 }
 
 
