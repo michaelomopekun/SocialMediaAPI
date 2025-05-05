@@ -10,6 +10,8 @@ using Serilog.Events;
 using SocialMediaAPI.Constants;
 using SocialMediaAPI.Mappings;
 using System.Text;
+using SocialMediaAPI.Services;
+using SocialMediaAPI.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,6 +73,8 @@ builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<ICacheService, CacheService>();
 builder.Services.AddScoped<FeedScoreCalculator>();
+builder.Services.AddScoped<ILikeService, LikeService>();
+builder.Services.AddScoped<ILikeRepository, LikeRepository>();
 
 //Redis cache configuration
 builder.Services.AddStackExchangeRedisCache(options =>
