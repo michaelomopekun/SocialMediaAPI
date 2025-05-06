@@ -119,4 +119,20 @@ public class LikeService : ILikeService
         }
     }
 
+    public async Task<bool> RemoveLikeAsync(string userId, string postId, string? commentId = null)
+    {
+        try
+        {
+            var result = await _likeRepository.DeleteLikeAsync(userId, postId, commentId);
+
+            await InvalidateReactionCacheAsync(postId, commentId, userId);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing like for post {PostId}", postId);
+            throw;
+        }
+    }
 }

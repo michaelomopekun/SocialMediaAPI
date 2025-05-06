@@ -15,6 +15,17 @@ public class PostController : ControllerBase
     private readonly IPostService _postService;
     private readonly ILogger<PostController> _logger;
     private readonly ILikeService _likeService;
+    private static readonly HashSet<ReactionType> ValidReactions = new()
+    {
+        ReactionType.Like,
+        ReactionType.Love,
+        ReactionType.Haha,
+        ReactionType.Wow,
+        ReactionType.Sad,
+        ReactionType.Angry,
+        ReactionType.DisLike,
+        ReactionType.Care
+    };
 
     public PostController(IPostService postService, ILogger<PostController> logger, ILikeService likeService)
     {
@@ -409,6 +420,11 @@ public class PostController : ControllerBase
     {
         try
         {
+            if(!ValidReactions.Contains(request.ReactionType))
+            {
+                return BadRequest(new { Status = "Error", Message = "Invalid reaction type" });
+            }
+
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
             {
@@ -429,6 +445,35 @@ public class PostController : ControllerBase
         {
             _logger.LogError(ex, "Error toggling like for post {PostId}", postId);
             return StatusCode(500, new { Status = "Error", Message = "Error toggling like" });
+        }
+    }
+
+    [HttpDelete("{postId}/like")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult> RemoveLike(string postId, [FromQuery] string? commentId = null)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { Status = "Error", Message = "User not authorized" });
+            }
+
+            var result = await _likeService.RemoveLikeAsync(userId, postId, commentId);
+            if (!result)
+            {
+                return NotFound(new { Status = "Error", Message = "Like not found" });
+            }
+
+            return Ok(new { Status = "Success", Message = "Like removed successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing like for post {PostId}", postId);
+            return StatusCode(500, new { Status = "Error", Message = "Error removing like" });
         }
     }
 
@@ -461,4 +506,5 @@ public class PostController : ControllerBase
     {
         return StatusCode(StatusCodes.Status403Forbidden, value);
     }
+
 }
