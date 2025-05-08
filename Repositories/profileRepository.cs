@@ -15,11 +15,25 @@ public class ProfileRepository : IProfileRepository
         _logger = logger;
     }
 
-    public async Task<ApplicationUser> CreateProfileAsync(ApplicationUser profile)
+    public async Task<ApplicationUser> CreateProfileAsync(string userId, ApplicationUser profile)
     {
         try
         {
-            await _context.Users.AddAsync(profile);
+            var userProfile = await _context.Users.FindAsync(userId);
+            if(userProfile == null) return null;
+
+            userProfile.Bio = profile.Bio;
+            userProfile.DateOfBirth = profile.DateOfBirth;
+            userProfile.PhoneNumber = profile.PhoneNumber;
+            userProfile.ProfilePictureUrl = profile.ProfilePictureUrl;
+            userProfile.UpdatedAt = profile.UpdatedAt;
+            userProfile.Location = profile.Location;
+
+            if(profile.Bio != null && profile.ProfilePictureUrl != null && profile.DateOfBirth != null && profile.Location != null && profile.PhoneNumber != null)
+            {
+                userProfile.ProfileCompleted = true;
+            }
+
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("CreateProfileAsync::Profile created successfully: {UserName}", profile.UserName);
@@ -37,10 +51,12 @@ public class ProfileRepository : IProfileRepository
     {
         try
         {
-            var profile = await _context.Users.FindAsync(id);
-            if (profile == null) return false;
+            var userProfile = await _context.Users.FindAsync(id);
+            if (userProfile == null) return false;
 
-            _context.Users.Remove(profile);
+            userProfile.ProfileIsDeleted = true;
+            userProfile.UpdatedAt = DateTime.UtcNow;
+
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("DeleteProfileAsync::Profile deleted successfully: {Id}", id);
@@ -63,6 +79,7 @@ public class ProfileRepository : IProfileRepository
                 .OrderBy(u => u.UserName)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
+                .Where(u => u.ProfileIsDeleted == false)
                 .Select(u => new ApplicationUser
                 {
                     Id = u.Id,
@@ -92,9 +109,11 @@ public class ProfileRepository : IProfileRepository
         {
             var profile = await _context.Users
                 .AsNoTracking()
-                .Where(u => u.Id == id)
+                .Where(u => u.Id == id && u.ProfileIsDeleted == false)
                 .Select(u => new ApplicationUser
                 {
+                    Id = u.Id,
+                    UserName = u.UserName,
                     PhoneNumber = u.PhoneNumber,
                     ProfilePictureUrl = u.ProfilePictureUrl,
                     Bio = u.Bio,
@@ -106,7 +125,6 @@ public class ProfileRepository : IProfileRepository
             if (profile == null || profile.Bio == null || profile.ProfilePictureUrl == null || profile.DateOfBirth == null || profile.Location == null || profile.PhoneNumber == null)
             {
                 _logger.LogWarning("GetProfileByIdAsync::Profile not found or incomplete: {Id}", id);
-                return null;
             }
 
             _logger.LogInformation("GetProfileByIdAsync::Profile retrieved successfully: {Id}", id);
@@ -126,9 +144,11 @@ public class ProfileRepository : IProfileRepository
         {
             var profile = await _context.Users
                 .AsNoTracking()
-                .Where(u => u.UserName == userName)
+                .Where(u => u.UserName == userName && u.ProfileIsDeleted == false)
                 .Select(u => new ApplicationUser
                 {
+                    Id = u.Id,
+                    UserName = u.UserName,
                     PhoneNumber = u.PhoneNumber,
                     ProfilePictureUrl = u.ProfilePictureUrl,
                     Bio = u.Bio,
@@ -160,7 +180,17 @@ public class ProfileRepository : IProfileRepository
         {
             var profileExists = await _context.Users
                                     .AsNoTracking()
-                                    .Where(u => u.Id == userId && u.Bio != null && u.ProfilePictureUrl != null && u.DateOfBirth != null && u.Location != null && u.PhoneNumber != null)
+                                    .Where(u => u.Id == userId && u.ProfileIsDeleted == false && (u.ProfileCompleted == true || u.ProfileCompleted == false))
+                                    .Select(u => new ApplicationUser
+                                    {
+                                        Id = u.Id,
+                                        UserName = u.UserName,
+                                        PhoneNumber = u.PhoneNumber,
+                                        ProfilePictureUrl = u.ProfilePictureUrl,
+                                        Bio = u.Bio,
+                                        DateOfBirth = u.DateOfBirth,
+                                        Location = u.Location
+                                    })
                                     .AnyAsync();
 
             if (!profileExists)
@@ -193,8 +223,16 @@ public class ProfileRepository : IProfileRepository
             existingProfile.Location = profile.Location;
             existingProfile.PhoneNumber = profile.PhoneNumber;
             existingProfile.ProfilePictureUrl = profile.ProfilePictureUrl;
+            existingProfile.UpdatedAt = DateTime.UtcNow;
+            existingProfile.ProfileCompleted = false;
+
+            if(profile.Bio != null && profile.ProfilePictureUrl != null && profile.DateOfBirth != null && profile.Location != null && profile.PhoneNumber != null)
+            {
+                existingProfile.ProfileCompleted = true;
+            }
 
             await _context.SaveChangesAsync();
+
 
             _logger.LogInformation("UpdateProfileAsync::Profile updated successfully: {Id}", id);
 

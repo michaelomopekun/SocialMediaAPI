@@ -1,7 +1,6 @@
 using AutoMapper;
 using NanoidDotNet;
 using SocialMediaAPI.Constants;
-using SocialMediaAPI.Models.Domain;
 using SocialMediaAPI.Models.DTOs;
 using SocialMediaAPI.Repositories;
 
@@ -11,6 +10,8 @@ public class LikeService : ILikeService
 {
     private readonly ILikeRepository _likeRepository;
     private readonly IProfileRepository _userRepository;
+    private readonly IPostRepository _postRepository;
+    private readonly ICommentRepository _commentRepository;
     private readonly ICacheService _cacheService;
     private readonly IMapper _mapper;
     private readonly ILogger<LikeService> _logger;
@@ -19,12 +20,16 @@ public class LikeService : ILikeService
     public LikeService(
         ILikeRepository likeRepository,
         IProfileRepository userRepository,
+        IPostRepository postRepository,
+        ICommentRepository commentRepository,
         ICacheService cacheService,
         IMapper mapper,
         ILogger<LikeService> logger)
     {
         _likeRepository = likeRepository;
         _userRepository = userRepository;
+        _postRepository = postRepository;
+        _commentRepository = commentRepository;
         _cacheService = cacheService;
         _mapper = mapper;
         _logger = logger;
@@ -49,6 +54,8 @@ public class LikeService : ILikeService
             {
                 throw new Exception("Failed to toggle reaction");
             }
+
+            await _postRepository.incrementPostLikesCount(postId, 1);
 
             var user = await _userRepository.GetProfileByIdAsync(userId);
             

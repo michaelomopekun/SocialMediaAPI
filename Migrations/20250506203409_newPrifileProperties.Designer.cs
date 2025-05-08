@@ -12,8 +12,8 @@ using SocialMediaAPI.Data;
 namespace SocialMediaAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250501050353_newPropertiesToFollow")]
-    partial class newPropertiesToFollow
+    [Migration("20250506203409_newPrifileProperties")]
+    partial class newPrifileProperties
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -379,7 +379,7 @@ namespace SocialMediaAPI.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<DateTime>("DateOfBirth")
+                    b.Property<DateTime?>("DateOfBirth")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
@@ -419,6 +419,12 @@ namespace SocialMediaAPI.Migrations
                         .HasColumnType("text");
 
                     b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ProfileCompleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ProfileIsDeleted")
                         .HasColumnType("boolean");
 
                     b.Property<string>("ProfilePictureUrl")

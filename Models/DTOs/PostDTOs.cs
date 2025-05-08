@@ -21,6 +21,12 @@ namespace SocialMediaAPI.Models.DTOs
         public string? ImageUrl { get; set; }
     }
 
+    public class UpdatePostLikesDTO
+    {
+        [Required(ErrorMessage = "LikesCount is required.")]
+        public int LikesCount { get; set; }
+    }
+
     public class PostResponseDTO
     {
         [Required]

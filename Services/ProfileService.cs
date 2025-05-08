@@ -40,7 +40,7 @@ public class ProfileService : IProfileService
                 PhoneNumber = createProfileDTO.PhoneNumber
             };
 
-            var createdProfile = await _profileRepository.CreateProfileAsync(profile);
+            var createdProfile = await _profileRepository.CreateProfileAsync(userId,profile);
 
             var profileResponse = _mapper.Map<ProfileResponseDTO>(createdProfile);
 

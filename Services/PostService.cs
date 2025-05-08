@@ -20,6 +20,7 @@ public class PostService : IPostService
         _scoreCalculator = scoreCalculator;
         _logger = logger;
         _postRepository = postRepository;
+        _commentRepository = commentRepository;
         _mapper = mapper;
     }
 
@@ -72,10 +73,18 @@ public class PostService : IPostService
                 return cachedFeed;
             }
 
-            var posts = await _postRepository.GetFollowersPostsAsync(userId, pageNumber * 2, pageSize * 2);
+            var posts = await _postRepository.GetFollowersPostsAsync(userId, pageNumber, pageSize);
             if (!posts.Any())
             {
                 return Enumerable.Empty<PostResponseDTO>();
+            }
+
+            if(posts == null)
+            {
+                var AllNonFollowersPosts = await _postRepository.GetAllPostsAsync(pageNumber, pageSize);
+                if (AllNonFollowersPosts == null) return null;
+                
+                posts = AllNonFollowersPosts;
             }
 
             var now = DateTime.UtcNow;
@@ -145,6 +154,10 @@ public class PostService : IPostService
             var createdComment = await _commentRepository.AddCommentToPostAsync(postId, comment);
             if (createdComment == null) return null;
 
+            await _postRepository.incrementPostCommentsCount(postId, 1);
+
+            _logger.LogInformation("Comment with ID {CommentId} added to post with ID {PostId}.", createdComment.Id, postId);
+
             return _mapper.Map<CommentResponseDTO>(createdComment);
         }
         catch (Exception ex)
@@ -167,6 +180,8 @@ public class PostService : IPostService
             var updatedComment = await _commentRepository.UpdateCommentAsync(commentId, existingComment);
             if (updatedComment == null) return null;
 
+            _logger.LogInformation("Comment with ID {CommentId} updated successfully.", commentId);
+
             return _mapper.Map<CommentResponseDTO>(updatedComment);
         }
         catch (Exception ex)
@@ -179,6 +194,15 @@ public class PostService : IPostService
     public async Task<bool> DeleteCommentAsync(string commentId, string userId)
     {
         var isDeleted = await _commentRepository.DeleteCommentAsync(commentId);
+        if (isDeleted)
+        {
+            var comment = await _commentRepository.GetCommentByIdAsync(commentId);
+            if (comment == null) return false;
+
+            await _postRepository.incrementPostCommentsCount(comment.PostId, -1);
+
+            _logger.LogInformation("Comment with ID {CommentId} deleted successfully.", commentId);
+        }
 
         return isDeleted;
     }

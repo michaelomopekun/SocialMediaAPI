@@ -28,8 +28,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
         base.OnModelCreating(builder);
 
+        builder.UseCollation("en-US");
 
-                // Add PostgreSQL-specific configurations
+
+        // Add PostgreSQL-specific configurations
         builder.HasDefaultSchema("public");
 
         // Configure case-insensitive string comparison

@@ -254,6 +254,11 @@ public class PostController : ControllerBase
     {
         try
         {
+            if (string.IsNullOrEmpty(postId))
+            {
+                return BadRequest(new { Status = "Error", Message = "Post ID is required" });
+            }
+
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
             {
@@ -271,7 +276,7 @@ public class PostController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occurred while adding a comment to the post.");
-            return StatusCode(500, new { Status = "Error", Message = "Error adding comment" });
+            return StatusCode(500, new { Status = "Error", Message = "Error adding comment", log = $"{ex.InnerException}" });
         }
     }
 
@@ -433,11 +438,7 @@ public class PostController : ControllerBase
 
             request.PostId = postId;
             
-            var response = await _likeService.ToggleLikeAsync(
-                userId, 
-                request.PostId, 
-                request.CommentId, 
-                request.ReactionType);
+            var response = await _likeService.ToggleLikeAsync(userId, request.PostId, request.CommentId, request.ReactionType);
 
             return Ok(new { Status = "Success", Data = response });
         }

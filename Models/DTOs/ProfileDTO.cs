@@ -69,6 +69,8 @@ public class ProfileResponseDTO
     public string? ProfilePictureUrl { get; set; } = string.Empty;
 
     public string? Bio { get; set; } = string.Empty;
+    public bool ProfileCompleted { get; set; } = false;
+    public bool ProfileIsDeleted { get; set; } = false;
 
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

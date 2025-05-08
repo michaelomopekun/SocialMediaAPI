@@ -9,4 +9,7 @@ public interface IPostRepository
     Task<Post> UpdatePostAsync(string Id, Post post);
     Task<bool> DeletePostAsync(string Id); 
     Task<bool> PostExistsAsync(string id);
+    Task<bool> incrementPostSharesCount(string postId, int count);
+    Task<bool> incrementPostLikesCount(string postId, int count);
+    Task<bool> incrementPostCommentsCount(string postId, int count);
 }

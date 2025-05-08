@@ -6,7 +6,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace SocialMediaAPI.Migrations
 {
-    public partial class InitialCreate : Migration
+    public partial class newPrifileProperties : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -37,11 +37,13 @@ namespace SocialMediaAPI.Migrations
                     FirstName = table.Column<string>(type: "text", nullable: true),
                     LastName = table.Column<string>(type: "text", nullable: true),
                     ProfilePictureUrl = table.Column<string>(type: "text", nullable: true),
-                    DateOfBirth = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DateOfBirth = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     Bio = table.Column<string>(type: "text", nullable: true),
                     Location = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    ProfileCompleted = table.Column<bool>(type: "boolean", nullable: false),
+                    ProfileIsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -188,6 +190,10 @@ namespace SocialMediaAPI.Migrations
                     FollowingUserId = table.Column<string>(type: "text", nullable: false),
                     Id = table.Column<int>(type: "integer", nullable: false),
                     FollowedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    BlockedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UnblockedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UnfollowedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsFollowing = table.Column<bool>(type: "boolean", nullable: false),
                     IsFollower = table.Column<bool>(type: "boolean", nullable: false),
                     IsBlocked = table.Column<bool>(type: "boolean", nullable: false)

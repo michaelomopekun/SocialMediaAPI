@@ -71,19 +71,19 @@ public class PostRepository : IPostRepository
                     .OrderByDescending(c => c.CreatedAt)
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(p => new Post
-                    {
-                        Id = p.Id,
-                        Content = p.Content,
-                        ImageUrl = p.ImageUrl,
-                        CreatedAt = p.CreatedAt,
-                        UpdatedAt = p.UpdatedAt,
-                        UserId = p.UserId,
-                        User = p.User,
-                        LikesCount = p.Likes != null ? p.Likes.Count() : 0,
-                        CommentsCount = p.Comments != null ? p.Comments.Count() : 0,
-                        SharesCount = p.Shares != null ? p.Shares.Count() : 0
-                    })
+                    // .Select(p => new Post
+                    // {
+                    //     Id = p.Id,
+                    //     Content = p.Content,
+                    //     ImageUrl = p.ImageUrl,
+                    //     CreatedAt = p.CreatedAt,
+                    //     UpdatedAt = p.UpdatedAt,
+                    //     UserId = p.UserId,
+                    //     User = p.User,
+                    //     LikesCount = p.LikesCount,
+                    //     CommentsCount = p.CommentsCount,
+                    //     SharesCount = p.SharesCount
+                    // })
                     .ToListAsync();
 
                 var cacheOptions = new MemoryCacheEntryOptions()
@@ -104,30 +104,67 @@ public class PostRepository : IPostRepository
 
     public async Task<IEnumerable<Post>> GetFollowersPostsAsync(string userId, int pageNumber = 1, int pageSize = 10)
     {
-        try
-        {
-            var posts = await _context.Posts
-            .Include(u => u.User)
-            .Include(l => l.Likes)
-            .Include(c => c.Comments)
-            .Include(s => s.Shares)
-            .Where(p => _context.Follows
-                .Where(f => f.FollowerUserId == userId)
-                .Select(f => f.FollowingUserId)
-                .Contains(p.UserId))
-            .OrderByDescending(c => c.CreatedAt)
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .AsNoTracking()
-            .ToListAsync();
+        var cacheKey = $"followers-posts-{userId}-{pageNumber}-{pageSize}";
 
-            return posts;
-        }
-        catch(Exception ex)
+        if (!_cache.TryGetValue(cacheKey, out IEnumerable<Post>? posts))
         {
-            _logger.LogError("GetFollowersPostsAsync::Error getting Followers Post: {Message}", ex.Message);
-            throw new Exception($"GetFollowersPostsAsync::Error getting Followers Post: {ex.Message}");
+            try
+            {
+                var followingIds = await _context.Follows
+                    .Where(f => f.FollowingUserId == userId)
+                    .Select(f => f.FollowerUserId)
+                    .ToListAsync();
+
+                if (!followingIds.Any())
+                {
+                    return null;
+                }
+
+                posts = await _context.Posts
+                    .Include(u => u.User)
+                    .Include(l => l.Likes)
+                    .Include(c => c.Comments)
+                    .Include(s => s.Shares)
+                    .Where(p => followingIds.Contains(p.UserId))
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    // .Select(p => new Post
+                    // {
+                    //     Id = p.Id,
+                    //     Content = p.Content,
+                    //     ImageUrl = p.ImageUrl,
+                    //     CreatedAt = p.CreatedAt,
+                    //     UpdatedAt = p.UpdatedAt,
+                    //     UserId = p.UserId,
+                    //     User = p.User,
+                    //     LikesCount = p.LikesCount,
+                    //     CommentsCount = p.CommentsCount,
+                    //     SharesCount = p.SharesCount
+                    // })
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                var cacheOptions = new MemoryCacheEntryOptions()
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(CACHE_DURATION))
+                    .RegisterPostEvictionCallback((key, value, reason, state) =>
+                    {
+                        _logger.LogInformation("Cache entry {Key} was evicted due to {Reason}", key, reason);
+                    });
+
+                _cache.Set(cacheKey, posts, cacheOptions);
+
+                return posts;
+        
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError("GetFollowersPostsAsync::Error getting Followers Post: {Message}", ex.Message);
+                throw new Exception($"GetFollowersPostsAsync::Error getting Followers Post: {ex.Message}");
+            }
         }
+
+        return posts ?? Enumerable.Empty<Post>();
     }
 
     public async Task<Post> GetPostByIdAsync(string id)
@@ -233,17 +270,26 @@ public class PostRepository : IPostRepository
     {
         try
         {
-            var existingPost = await _context.Posts
-                .FindAsync(Id);
-            
-            if(existingPost == null)
-            {
-                return null;
-            }
+            var existingPost = await _context.Posts.FindAsync(Id);
 
-            existingPost.Content = post.Content;
-            existingPost.ImageUrl = post.ImageUrl;
+            if (existingPost == null)return null;
+
+            if (!string.IsNullOrWhiteSpace(post.Content))
+                existingPost.Content = post.Content;
+
+            if (!string.IsNullOrWhiteSpace(post.ImageUrl))
+                existingPost.ImageUrl = post.ImageUrl;
+
             existingPost.UpdatedAt = DateTime.UtcNow;
+
+            if (post.LikesCount != default)
+                existingPost.LikesCount = post.LikesCount;
+
+            if (post.CommentsCount != default)
+                existingPost.CommentsCount = post.CommentsCount;
+
+            if (post.SharesCount != default)
+                existingPost.SharesCount = post.SharesCount;
 
             await _context.SaveChangesAsync();
 
@@ -256,6 +302,62 @@ public class PostRepository : IPostRepository
         {
             _logger.LogError("UpdatePostAsync::Error updating Post{Message}", ex);
             throw new Exception($"UpdatePostAsync::Error updating Post: {ex.Message}");
+        }
+    }
+
+    public async Task<bool> incrementPostLikesCount(string postId, int count)
+    {
+        try
+        {
+            var post = await _context.Posts.FindAsync(postId);
+            if (post == null) return false;
+
+            post.LikesCount = (byte)Math.Max(0, (post.LikesCount ?? 0) + count);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("incrementPostLikesCount::Error incrementing likes count: {Message}", ex.Message);
+            throw new Exception($"incrementPostLikesCount::Error incrementing likes count: {ex.Message}");
+        }
+    }
+
+    public async Task<bool> incrementPostCommentsCount(string postId, int count)
+    {
+        try
+        {
+            var post = await _context.Posts.FindAsync(postId);
+            if (post == null) return false;
+
+            post.CommentsCount = (byte)Math.Max(0, (post.CommentsCount ?? 0) + count);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("incrementPostCommentsCount::Error incrementing comments count: {Message}", ex.Message);
+            throw new Exception($"incrementPostCommentsCount::Error incrementing comments count: {ex.Message}");
+        }
+    }
+    public async Task<bool> incrementPostSharesCount(string postId, int count)
+    {
+        try
+        {
+            var post = await _context.Posts.FindAsync(postId);
+            if (post == null) return false;
+
+            post.SharesCount = (byte)Math.Max(0, (post.SharesCount ?? 0) + count);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("incrementPostSharesCount::Error incrementing shares count: {Message}", ex.Message);
+            throw new Exception($"incrementPostSharesCount::Error incrementing shares count: {ex.Message}");
         }
     }
 

@@ -377,7 +377,7 @@ namespace SocialMediaAPI.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<DateTime>("DateOfBirth")
+                    b.Property<DateTime?>("DateOfBirth")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
@@ -417,6 +417,12 @@ namespace SocialMediaAPI.Migrations
                         .HasColumnType("text");
 
                     b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ProfileCompleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ProfileIsDeleted")
                         .HasColumnType("boolean");
 
                     b.Property<string>("ProfilePictureUrl")
