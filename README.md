@@ -1,7 +1,7 @@
 
 # SocialMediaAPI
 
-##Contents
+## Contents
 - [Introduction](#introduction)
 - [Features](#features)
 - [Installation](#installation)
@@ -62,7 +62,7 @@ SocialMediaAPI is a backend service designed to provide APIs for a social media 
 
 ### API Endpoints
 | Endpoint                | Method | Description               |
-|-------------------------|--------|---------------------------|   |
+|-------------------------|--------|---------------------------|
 | `/api/posts`            | POST   | Create a new post         |
 | `/api/posts/{id}`       | DELETE | Delete a post by ID       |
 | `/api/posts/{id}/like`  | POST   | Like a post               |
