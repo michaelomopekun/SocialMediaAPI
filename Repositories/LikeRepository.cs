@@ -1,43 +1,54 @@
 using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 using SocialMediaAPI.Constants;
 using SocialMediaAPI.Data;
-using SocialMediaAPI.Models.Domain;
+
 
 namespace SocialMediaAPI.Repositories;
 
 public class LikeRepository : ILikeRepository
 {
     private readonly ApplicationDbContext _context;
+    private readonly IMongoCollection<Like> _likes;
+    private readonly IMongoCollection<Post> _posts;
+    private readonly IMongoCollection<Comment> _comments;
     private readonly ICacheService _cacheService;
     private readonly ILogger<LikeRepository> _logger;
 
     public LikeRepository(
         ApplicationDbContext context,
+        IMongoCollection<Like> likes,
+        IMongoCollection<Post> posts,
+        IMongoCollection<Comment> comments,
         ICacheService cacheService,
         ILogger<LikeRepository> logger)
     {
         _context = context;
         _cacheService = cacheService;
         _logger = logger;
+        _likes = likes;
+        _posts = posts;
+        _comments = comments;
     }
 
     public async Task<Like?> CreateLikeAsync(Like like)
     {
         try
         {
-            var existingLike = await _context.Likes
-                .FirstOrDefaultAsync(l => 
-                    l.UserId == like.UserId && 
+            var existingLike = await _likes
+                .Find(l =>
+                    l.UserId == like.UserId &&
                     l.PostId == like.PostId &&
                     (l.CommentId == like.CommentId || 
-                    (l.CommentId == null && like.CommentId == null)));
+                    (l.CommentId == null && like.CommentId == null))).FirstOrDefaultAsync();
 
             if (existingLike != null)
             {
                 if (existingLike.Reaction != like.Reaction)
                 {
                     existingLike.Reaction = like.Reaction;
-                    await _context.SaveChangesAsync();
+                    
+                    await _likes.InsertOneAsync(existingLike);
                     await InvalidateCacheAsync(existingLike);
                 }
                 return existingLike;

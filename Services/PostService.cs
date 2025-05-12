@@ -67,11 +67,11 @@ public class PostService : IPostService
     {
         try
         {
-            var cachedFeed = await _cacheService.GetFeedCacheAsync(userId, pageNumber, pageSize);
-            if (cachedFeed != null)
-            {
-                return cachedFeed;
-            }
+            // var cachedFeed = await _cacheService.GetFeedCacheAsync(userId, pageNumber, pageSize);
+            // if (cachedFeed != null)
+            // {
+            //     return cachedFeed;
+            // }
 
             var posts = await _postRepository.GetFollowersPostsAsync(userId, pageNumber, pageSize);
             if (!posts.Any())

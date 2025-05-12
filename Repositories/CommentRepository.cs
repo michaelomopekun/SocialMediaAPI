@@ -1,21 +1,21 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using SocialMediaAPI.Data;
+using MongoDB.Driver;
 
 public class CommentRepository : ICommentRepository
 {
 
-    private readonly ApplicationDbContext _context;
-    private readonly IPostRepository _postRepository;
+    private readonly IMongoCollection<Comment> _comments;
+    private readonly IMongoCollection<Post> _posts;
     private readonly ILogger<CommentRepository> _logger;
     private readonly IMemoryCache _cache;
     private const int CACHE_DURATION = 30;
 
-    public CommentRepository(ApplicationDbContext context, IPostRepository postRepository, ILogger<CommentRepository> logger, IMemoryCache cache)
+    public CommentRepository(ILogger<CommentRepository> logger, IMemoryCache cache, IMongoCollection<Comment> comments, IMongoCollection<Post> posts)
     {
-        _context = context;
-        _postRepository = postRepository;
         _logger = logger;
+        _comments = comments;
+        _posts = posts;
         _cache = cache;
     }
 
@@ -26,10 +26,10 @@ public class CommentRepository : ICommentRepository
             var cacheKey = $"comments_{pageNumber}_{pageSize}";
             if (!_cache.TryGetValue(cacheKey, out IEnumerable<Comment> comments))
             {
-                comments = await _context.Comments
+                comments = await _comments.Find(_ => true)
+                    .SortByDescending(c => c.CreatedAt)
                     .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
-                    .AsNoTracking()
+                    .Limit(pageSize)
                     .ToListAsync();
 
                 var cacheEntryOptions = new MemoryCacheEntryOptions()
@@ -51,9 +51,9 @@ public class CommentRepository : ICommentRepository
     {
         try
         {
-            var comment = await _context.Comments
-                .Include(c => c.User)
-                .FirstOrDefaultAsync(i => i.Id == id);
+            var comment = await _comments
+                .Find(c => c.Id == id)
+                .FirstOrDefaultAsync();
 
             if (comment == null) return null;
 
@@ -73,11 +73,10 @@ public class CommentRepository : ICommentRepository
             var cacheKey = $"comments_post_{postId}_{pageNumber}_{pageSize}";
             if (!_cache.TryGetValue( cacheKey, out IEnumerable<Comment> comments))
             {
-                comments = await _context.Comments
-                    .Where(c => c.PostId == postId)
-                    .AsNoTracking()
+                comments = await _comments
+                    .Find(c => c.PostId == postId)
                     .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
+                    .Limit(pageSize)
                     .ToListAsync();
 
                 var cacheEntryOptions = new MemoryCacheEntryOptions()
@@ -102,11 +101,10 @@ public class CommentRepository : ICommentRepository
             var cacheKey = $"comments_user_{userId}_{pageNumber}_{pageSize}";
             if (!_cache.TryGetValue(cacheKey, out IEnumerable<Comment> comments))
             {
-                comments = await _context.Comments
-                    .Where(c => c.UserId == userId)
-                    .AsNoTracking()
+                comments = await _comments
+                    .Find(c => c.UserId == userId)
                     .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
+                    .Limit(pageSize)
                     .ToListAsync();
 
                 var cacheEntryOptions = new MemoryCacheEntryOptions()
@@ -129,9 +127,7 @@ public class CommentRepository : ICommentRepository
     {
         try
         {
-
-            await _context.Comments.AddAsync(comment);
-            await _context.SaveChangesAsync();
+            await _comments.InsertOneAsync(comment);
 
             return comment;
         }
@@ -146,7 +142,7 @@ public class CommentRepository : ICommentRepository
     {
         try
         {
-            var existingComment = await _context.Comments.FindAsync(id);
+            var existingComment = await _comments.Find(c => c.Id == id).FirstOrDefaultAsync();
             if (existingComment == null) return null;
 
             _cache.Remove($"comments_post_{existingComment.PostId}");
@@ -156,7 +152,8 @@ public class CommentRepository : ICommentRepository
             existingComment.PostId = comment.PostId;
             existingComment.UserId = comment.UserId;
 
-            await _context.SaveChangesAsync();
+            await _comments.ReplaceOneAsync(c => c.Id == id, existingComment);
+
             return existingComment;
         }
         catch(Exception ex)
@@ -170,14 +167,14 @@ public class CommentRepository : ICommentRepository
     {
         try
         {
-            var comment = await _context.Comments.FindAsync(id);
+            var comment = await _comments.Find(i => i.Id == id).FirstOrDefaultAsync();
             if (comment == null) return false;
 
             _cache.Remove($"comments_post_{comment.PostId}_1_10");
             _cache.Remove($"comments_post_{comment.PostId}_2_10");
 
-            _context.Comments.Remove(comment);
-            await _context.SaveChangesAsync();
+            await _comments.DeleteOneAsync(c => c.Id == id);
+
             return true;
         }
         catch(Exception ex)
@@ -191,7 +188,8 @@ public class CommentRepository : ICommentRepository
     {
         try
         {
-            return await _context.Comments.AnyAsync(c => c.Id == id);
+            var count = await _comments.CountDocumentsAsync(c => c.Id == id);
+            return count > 0;
         }
         catch(Exception ex)
         {
@@ -204,17 +202,14 @@ public class CommentRepository : ICommentRepository
     {
         try
         {
-            var post = await _context.Posts.FindAsync(postId);
+            var post = await _posts.Find(p => p.Id == postId).FirstOrDefaultAsync();
             if (post == null) return null;
-            
-            comment.Post = post;
-            await _context.Comments.AddAsync(comment);
-            await _context.SaveChangesAsync();
 
-            return await _context.Comments
-                .Include(c => c.User)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == comment.Id);
+            comment.PostId = post.Id;
+
+            await _comments.InsertOneAsync(comment);
+
+            return await _comments.Find(i => i.Id == comment.Id).FirstOrDefaultAsync();
         }
         catch(Exception ex)
         {

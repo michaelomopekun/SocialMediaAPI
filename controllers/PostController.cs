@@ -227,8 +227,8 @@ public class PostController : ControllerBase
                 return NotFound(new { Status = "Error", Message = "No posts found in feed" });
             }
 
-            return Ok(new { 
-                Status = "Success", 
+            return Ok(new {
+                Status = "Success",
                 Data = posts,
                 Pagination = new {
                     PageNumber = pageNumber,

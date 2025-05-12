@@ -1,23 +1,37 @@
-using Microsoft.AspNetCore.Identity;
-namespace SocialMediaAPI.Models.Domain.User;
+using AspNetCore.Identity.MongoDbCore.Models;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
-
-public class ApplicationUser : IdentityUser
+public class ApplicationUser : MongoIdentityUser
 {
+    [BsonElement("firstName")]
     public string? FirstName { get; set; }
+
+    [BsonElement("lastName")]
     public string? LastName { get; set; }
+
+    [BsonElement("profilePictureUrl")]
     public string? ProfilePictureUrl { get; set; }
+
+    [BsonElement("dateOfBirth")]
     public DateTime? DateOfBirth { get; set; }
+
+    [BsonElement("bio")]
     public string? Bio { get; set; }
+
+    [BsonElement("location")]
     public string? Location { get; set; }
+
+    [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("updatedAt")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("profileCompleted")]
     public bool ProfileCompleted { get; set; } = false;
+
+    [BsonElement("profileIsDeleted")]
     public bool ProfileIsDeleted { get; set; } = false;
-    public ICollection<Follow>? Followers { get; set; } = new List<Follow>();
-    public ICollection<Follow>? Following { get; set; } = new List<Follow>();
-    public ICollection<Like>? Likes { get; set; } = new List<Like>();
-    public ICollection<Share>? Shares { get; set; } = new List<Share>();
-    public ICollection<Post>? Posts { get; set; } = new List<Post>();
-    public ICollection<Comment>? Comments { get; set; } = new List<Comment>();
+
 }

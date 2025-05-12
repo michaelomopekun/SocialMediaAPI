@@ -55,6 +55,10 @@
               "target": "Package",
               "version": "[6.0.2, )"
             },
+            "AspNetCore.Identity.MongoDBCore": {
+              "target": "Package",
+              "version": "[6.0.0, )"
+            },
             "AutoMapper.Collection": {
               "target": "Package",
               "version": "[8.2.0, )"
@@ -92,6 +96,14 @@
             "Microsoft.Extensions.Caching.StackExchangeRedis": {
               "target": "Package",
               "version": "[9.0.2, )"
+            },
+            "MongoDB.Bson": {
+              "target": "Package",
+              "version": "[3.4.0, )"
+            },
+            "MongoDB.Driver": {
+              "target": "Package",
+              "version": "[3.4.0, )"
             },
             "Nanoid": {
               "target": "Package",

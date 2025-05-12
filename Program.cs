@@ -3,8 +3,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using SocialMediaAPI.Data;
-using SocialMediaAPI.Models.Domain.User;
 using Serilog;
 using Serilog.Events;
 using SocialMediaAPI.Constants;
@@ -12,6 +10,9 @@ using SocialMediaAPI.Mappings;
 using System.Text;
 using SocialMediaAPI.Services;
 using SocialMediaAPI.Repositories;
+using SocialMediaAPI.Settings;
+using MongoDB.Driver;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -142,17 +143,28 @@ builder.Services.AddCors(options =>
 });
 
 
-// Configure DbContext
-var connectionString = $"Server={Environment.GetEnvironmentVariable("POSTGRES_HOST")};" +
-                      $"Port={Environment.GetEnvironmentVariable("POSTGRES_PORT")};" +
-                      $"Database={Environment.GetEnvironmentVariable("POSTGRES_DB")};" +
-                      $"Username={Environment.GetEnvironmentVariable("POSTGRES_USER")};" +
-                      $"Password={Environment.GetEnvironmentVariable("POSTGRES_PASSWORD")};" +
-                      $"SSL Mode={Environment.GetEnvironmentVariable("POSTGRES_SSLMODE")};Trust Server Certificate=true";
+// // Configure DbContext
+// var connectionString = $"Server={Environment.GetEnvironmentVariable("POSTGRES_HOST")};" +
+//                       $"Port={Environment.GetEnvironmentVariable("POSTGRES_PORT")};" +
+//                       $"Database={Environment.GetEnvironmentVariable("POSTGRES_DB")};" +
+//                       $"Username={Environment.GetEnvironmentVariable("POSTGRES_USER")};" +
+//                       $"Password={Environment.GetEnvironmentVariable("POSTGRES_PASSWORD")};" +
+//                       $"SSL Mode={Environment.GetEnvironmentVariable("POSTGRES_SSLMODE")};Trust Server Certificate=true";
                       
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString, 
-        x => x.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
+// builder.Services.AddDbContext<ApplicationDbContext>(options =>
+//     options.UseNpgsql(connectionString, 
+//         x => x.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
+
+//MongoDB configuration
+builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
+
+builder.Services.AddSingleton<IMongoClient>(s =>
+{
+    var settings = s.GetRequiredService<IOptions<MongoDbSettings>>();
+    return new MongoClient(settings.Value.ConnectionString);
+});
+
+builder.Services.AddSingleton<MongoDbContext>();
 
 // Identity setup
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>( option =>
@@ -163,7 +175,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>( option =>
     option.Password.RequireUppercase = true;
     option.Password.RequireLowercase = true;
 })
-    .AddEntityFrameworkStores<ApplicationDbContext>()
+    // .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
 builder.Services.AddDistributedMemoryCache();
