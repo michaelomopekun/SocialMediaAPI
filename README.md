@@ -54,9 +54,12 @@ SocialMediaAPI is a backend service designed to provide APIs for a social media 
    dotnet run
    ```
 2. Access the API documentation (e.g., Swagger UI) at:
-   ```
-   http://localhost:5149/swagger
-   ```
+   - Locally: 
+     ```
+     http://localhost:5149/swagger
+     ```
+   - Production: 
+     [Swagger API Documentation](https://socialmediaapi-production-74e1.up.railway.app/swagger/index.html)
 
 ---
 
