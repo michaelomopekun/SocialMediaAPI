@@ -4,7 +4,6 @@ using MongoDB.Bson.Serialization.Attributes;
 public class Follow
 {
     [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
     public string Id { get; set; } = string.Empty;
 
     [BsonElement("followedAt")]
@@ -23,11 +22,9 @@ public class Follow
     public DateTime? UnfollowedAt { get; set; }
 
     [BsonElement("followerUserId")]
-    [BsonRepresentation(BsonType.ObjectId)]
     public string FollowerUserId { get; set; } = string.Empty;
 
     [BsonElement("followingUserId")]
-    [BsonRepresentation(BsonType.ObjectId)]
     public string FollowingUserId { get; set; } = string.Empty;
 
     [BsonElement("isFollowing")]

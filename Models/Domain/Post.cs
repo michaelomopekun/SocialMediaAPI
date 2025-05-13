@@ -4,7 +4,6 @@ using MongoDB.Bson.Serialization.Attributes;
 public class Post
 {
     [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
     public string Id {get;set;} = string.Empty;
     
     [BsonElement("content")]
@@ -37,9 +36,8 @@ public class Post
 public class Comment
 {
     [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
     public string Id {get;set;} = string.Empty;
-    
+
     [BsonElement("content")]
     public string? Content {get;set;}
     
@@ -56,7 +54,7 @@ public class Comment
     public string UserId {get;set;} = string.Empty;
 
     [BsonElement("repliedUserId")]
-    [BsonRepresentation(BsonType.ObjectId)]
+     
     public string? RepliedUserId {get;set;}
 }
 
@@ -64,22 +62,22 @@ public class Comment
 public class Like
 {
     [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
+     
     public string Id {get;set;} = string.Empty;
 
     [BsonElement("createdAt")]
     public DateTime CreatedAt {get;set;}
 
     [BsonElement("postId")]
-    [BsonRepresentation(BsonType.ObjectId)]
+     
     public string PostId {get;set;} = string.Empty;
 
     [BsonElement("userId")]
-    [BsonRepresentation(BsonType.ObjectId)]
+     
     public string UserId {get;set;} = string.Empty;
 
     [BsonElement("commentId")]
-    [BsonRepresentation(BsonType.ObjectId)]
+     
     public string? CommentId {get;set;}
 
     [BsonElement("type")]
@@ -93,18 +91,18 @@ public class Like
 public class Share
 {
     [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
+     
     public string Id {get;set;} = string.Empty;
 
     [BsonElement("createdAt")]
     public DateTime CreatedAt {get;set;}
 
     [BsonElement("postId")]
-    [BsonRepresentation(BsonType.ObjectId)]
+     
     public string PostId {get;set;} = string.Empty;
 
     [BsonElement("userId")]
-    [BsonRepresentation(BsonType.ObjectId)]
+     
     public string UserId {get;set;} = string.Empty;
 }
 
