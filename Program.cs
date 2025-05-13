@@ -94,13 +94,13 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo 
     { 
         Title = "Social Media API", 
-        Version = "v1",
-        Description = "A Social Media API built with ASP.NET Core",
+        Version = "v2",
+        Description = "A Social Media API built with ASP.NET with MongoDB",
         Contact = new OpenApiContact
         {
             Name = "galaxia",
             Email = "omopekunmichael@gmail.com",
-            Url = new Uri("https://socialmediaapi-production-74e1.up.railway.app")
+            Url = new Uri("https://socialmediaapi-production-1e91.up.railway.app")
         }
     });
     // Add JWT Authentication
@@ -130,7 +130,7 @@ builder.Services.AddSwaggerGen(c =>
 
     c.AddServer(new OpenApiServer
     {
-        Url = "https://socialmediaapi-production-74e1.up.railway.app"
+        Url = "https://socialmediaapi-production-1e91.up.railway.app"
     });
 });
 
