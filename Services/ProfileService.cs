@@ -1,7 +1,6 @@
 
 using AutoMapper;
 using SocialMediaAPI.Constants;
-using SocialMediaAPI.Models.Domain.User;
 
 public class ProfileService : IProfileService
 {
@@ -87,7 +86,7 @@ public class ProfileService : IProfileService
             }
 
             var profile = await _profileRepository.GetProfileByIdAsync(id);
-            if (profile == null) return null;
+            if (profile == null) return null!;
 
             var profileResponse = _mapper.Map<ProfileResponseDTO>(profile);
 
@@ -123,7 +122,7 @@ public class ProfileService : IProfileService
             }
 
             var profile = await _profileRepository.GetProfileByUserNameAsync(userName);
-            if (profile == null) return null;
+            if (profile == null) return null!;
 
             var profileResponse = _mapper.Map<ProfileResponseDTO>(profile);
 

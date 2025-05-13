@@ -186,12 +186,12 @@ public class PostController : ControllerBase
     [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
     [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<IEnumerable<PostResponseDTO>>> GetPostsByUser(string userId
-    // , [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10
+    , [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10
     )
     {
         try
         {
-            var posts = await _postService.GetPostsByUserIdAsync(userId);
+            var posts = await _postService.GetPostsByUserIdAsync(userId, pageNumber, pageSize);
             if (posts == null || !posts.Any())
             {
                 return NotFound(new { Status = "Error", Message = "No posts found for this user" });

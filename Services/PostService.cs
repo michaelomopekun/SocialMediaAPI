@@ -82,7 +82,7 @@ public class PostService : IPostService
             if(posts == null)
             {
                 var AllNonFollowersPosts = await _postRepository.GetAllPostsAsync(pageNumber, pageSize);
-                if (AllNonFollowersPosts == null) return null;
+                if (AllNonFollowersPosts == null) return null!;
                 
                 posts = AllNonFollowersPosts;
             }
@@ -117,9 +117,9 @@ public class PostService : IPostService
         return _mapper.Map<PostResponseDTO>(post);        
     }
 
-    public async Task<IEnumerable<PostResponseDTO>> GetPostsByUserIdAsync(string userId)
+    public async Task<IEnumerable<PostResponseDTO>> GetPostsByUserIdAsync(string userId, int pageNumber = 1, int pageSize = 10)
     {
-        var posts = await _postRepository.GetPostsByUserIdAsync(userId);
+        var posts = await _postRepository.GetPostsByUserIdAsync(userId, pageNumber, pageSize);
         return _mapper.Map<IEnumerable<PostResponseDTO>>(posts);
     }
 
@@ -152,7 +152,7 @@ public class PostService : IPostService
             };
 
             var createdComment = await _commentRepository.AddCommentToPostAsync(postId, comment);
-            if (createdComment == null) return null;
+            if (createdComment == null) return null!;
 
             await _postRepository.incrementPostCommentsCount(postId, 1);
 
@@ -210,7 +210,7 @@ public class PostService : IPostService
     public async Task<IEnumerable<CommentResponseDTO>> GetPostCommentsAsync(string postId, int pageNumber = 1, int pageSize = 10)
     {
         var comments = await _commentRepository.GetCommentsByPostIdAsync(postId, pageNumber, pageSize);
-        if(comments == null) return null;
+        if(comments == null) return null!;
 
         return _mapper.Map<IEnumerable<CommentResponseDTO>>(comments);
     }

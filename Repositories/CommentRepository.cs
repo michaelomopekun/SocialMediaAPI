@@ -24,7 +24,7 @@ public class CommentRepository : ICommentRepository
         try
         {
             var cacheKey = $"comments_{pageNumber}_{pageSize}";
-            if (!_cache.TryGetValue(cacheKey, out IEnumerable<Comment> comments))
+            if (!_cache.TryGetValue(cacheKey, out IEnumerable<Comment>? comments))
             {
                 comments = await _comments.Find(_ => true)
                     .SortByDescending(c => c.CreatedAt)
@@ -38,7 +38,7 @@ public class CommentRepository : ICommentRepository
                 _cache.Set(cacheKey, comments, cacheEntryOptions);
             }
 
-            return comments;
+            return comments!;
         }
         catch (Exception ex)
         {
@@ -55,7 +55,7 @@ public class CommentRepository : ICommentRepository
                 .Find(c => c.Id == id)
                 .FirstOrDefaultAsync();
 
-            if (comment == null) return null;
+            if (comment == null) return null!;
 
             return comment;
         }
@@ -71,7 +71,7 @@ public class CommentRepository : ICommentRepository
         try
         {
             var cacheKey = $"comments_post_{postId}_{pageNumber}_{pageSize}";
-            if (!_cache.TryGetValue( cacheKey, out IEnumerable<Comment> comments))
+            if (!_cache.TryGetValue( cacheKey, out IEnumerable<Comment>? comments))
             {
                 comments = await _comments
                     .Find(c => c.PostId == postId)
@@ -85,7 +85,7 @@ public class CommentRepository : ICommentRepository
                 _cache.Set(cacheKey, comments, cacheEntryOptions);
             }
 
-            return comments;
+            return comments!;
         }
         catch(Exception ex)
         {
@@ -99,7 +99,7 @@ public class CommentRepository : ICommentRepository
         try
         {
             var cacheKey = $"comments_user_{userId}_{pageNumber}_{pageSize}";
-            if (!_cache.TryGetValue(cacheKey, out IEnumerable<Comment> comments))
+            if (!_cache.TryGetValue(cacheKey, out IEnumerable<Comment>? comments))
             {
                 comments = await _comments
                     .Find(c => c.UserId == userId)
@@ -113,7 +113,7 @@ public class CommentRepository : ICommentRepository
                 _cache.Set(cacheKey, comments, cacheEntryOptions);
             }
 
-            return comments;
+            return comments!;
         }
         catch (Exception ex)
         {
@@ -143,7 +143,7 @@ public class CommentRepository : ICommentRepository
         try
         {
             var existingComment = await _comments.Find(c => c.Id == id).FirstOrDefaultAsync();
-            if (existingComment == null) return null;
+            if (existingComment == null) return null!;
 
             _cache.Remove($"comments_post_{existingComment.PostId}");
             _cache.Remove($"comments_post_{comment.PostId}");
