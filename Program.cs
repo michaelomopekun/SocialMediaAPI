@@ -148,12 +148,12 @@ builder.Services.AddCors(options =>
 
 
 //MongoDB configuration
-builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
-
 builder.Services.AddSingleton<IMongoClient>(s =>
 {
-    var settings = s.GetRequiredService<IOptions<MongoDbSettings>>();
-    return new MongoClient(settings.Value.ConnectionString);
+    var connectionString = Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING");
+    if (string.IsNullOrEmpty(connectionString))
+        throw new InvalidOperationException("MONGODB_CONNECTION_STRING environment variable is not set.");
+    return new MongoClient(connectionString);
 });
 
 builder.Services.AddSingleton<MongoDbContext>();
