@@ -2,7 +2,7 @@ using AspNetCore.Identity.MongoDbCore.Models;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-public class ApplicationUser : MongoIdentityUser
+public class ApplicationUser : MongoIdentityUser<string>
 {
     [BsonElement("firstName")]
     public string? FirstName { get; set; }

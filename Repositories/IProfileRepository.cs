@@ -1,5 +1,3 @@
-using SocialMediaAPI.Models.Domain.User;
-
 public interface IProfileRepository
 {
     Task<ApplicationUser?> GetProfileByIdAsync(string id);

@@ -1,4 +1,3 @@
-using SocialMediaAPI.Models.Domain;
 using SocialMediaAPI.Models.DTOs;
 
 namespace SocialMediaAPI.Services;

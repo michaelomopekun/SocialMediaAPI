@@ -13,6 +13,7 @@ using SocialMediaAPI.Repositories;
 using SocialMediaAPI.Settings;
 using MongoDB.Driver;
 using Microsoft.Extensions.Options;
+using AspNetCore.Identity.MongoDbCore.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,12 +30,14 @@ var requiredEnvVars = new[]
     "JWT_AUDIENCE"
 };
 
+
 // Initialize Serilog
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .WriteTo.Console()
     .CreateLogger();
-    
+
+
 // Configure configuration sources
 builder.Configuration
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -58,11 +61,11 @@ foreach (var envVar in requiredEnvVars)
     throw new InvalidOperationException(message);
 }
 
+
 //services setup.
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPostRepository, PostRepository>();
@@ -100,7 +103,6 @@ builder.Services.AddSwaggerGen(c =>
             Url = new Uri("https://socialmediaapi-production-74e1.up.railway.app")
         }
     });
-
     // Add JWT Authentication
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -133,6 +135,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 
+
 // Configure CORS policy
 builder.Services.AddCors(options =>
 {
@@ -143,17 +146,6 @@ builder.Services.AddCors(options =>
 });
 
 
-// // Configure DbContext
-// var connectionString = $"Server={Environment.GetEnvironmentVariable("POSTGRES_HOST")};" +
-//                       $"Port={Environment.GetEnvironmentVariable("POSTGRES_PORT")};" +
-//                       $"Database={Environment.GetEnvironmentVariable("POSTGRES_DB")};" +
-//                       $"Username={Environment.GetEnvironmentVariable("POSTGRES_USER")};" +
-//                       $"Password={Environment.GetEnvironmentVariable("POSTGRES_PASSWORD")};" +
-//                       $"SSL Mode={Environment.GetEnvironmentVariable("POSTGRES_SSLMODE")};Trust Server Certificate=true";
-                      
-// builder.Services.AddDbContext<ApplicationDbContext>(options =>
-//     options.UseNpgsql(connectionString, 
-//         x => x.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
 
 //MongoDB configuration
 builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
@@ -166,18 +158,63 @@ builder.Services.AddSingleton<IMongoClient>(s =>
 
 builder.Services.AddSingleton<MongoDbContext>();
 
-// Identity setup
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>( option =>
+builder.Services.AddIdentity<ApplicationUser, MongoIdentityRole<string>>(options =>
 {
-    option.Password.RequireDigit = true;
-    option.Password.RequiredLength = 8;
-    option.Password.RequireNonAlphanumeric = true;
-    option.Password.RequireUppercase = true;
-    option.Password.RequireLowercase = true;
+    options.Password.RequireDigit = true;
+    options.Password.RequiredLength = 8;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireLowercase = true;
 })
-    // .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders();
+.AddMongoDbStores<ApplicationUser, MongoIdentityRole<string>, string>(
+    Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING"),
+    Environment.GetEnvironmentVariable("MONGODB_DATABASE_NAME"))
+.AddDefaultTokenProviders();
 
+builder.Services.AddScoped(s =>
+{
+    var client = s.GetRequiredService<IMongoClient>();
+    var dbName = builder.Configuration["MongoDbSettings:DatabaseName"];
+    var database = client.GetDatabase(dbName);
+
+    return database.GetCollection<Post>("Posts");
+});
+builder.Services.AddScoped(s =>
+{
+    var client = s.GetRequiredService<IMongoClient>();
+    var dbName = builder.Configuration["MongoDbSettings:DatabaseName"];
+    var database = client.GetDatabase(dbName);
+
+    return database.GetCollection<Comment>("Comments");
+});
+builder.Services.AddScoped(s =>
+{
+    var client = s.GetRequiredService<IMongoClient>();
+    var dbName = builder.Configuration["MongoDbSettings:DatabaseName"];
+    var database = client.GetDatabase(dbName);
+
+    return database.GetCollection<Like>("Likes");
+});
+builder.Services.AddScoped(s =>
+{
+    var client = s.GetRequiredService<IMongoClient>();
+    var dbName = builder.Configuration["MongoDbSettings:DatabaseName"];
+    var database = client.GetDatabase(dbName);
+
+    return database.GetCollection<Follow>("Follows");
+});
+builder.Services.AddScoped(s =>
+{
+    var client = s.GetRequiredService<IMongoClient>();
+    var dbName = builder.Configuration["MongoDbSettings:DatabaseName"];
+    var database = client.GetDatabase(dbName);
+
+    return database.GetCollection<ApplicationUser>("Users");
+});
+
+
+
+// cache config
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
@@ -185,6 +222,8 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
+
+
 
 // JWT configuration
 builder.Services.AddAuthentication(options =>
@@ -233,7 +272,8 @@ builder.Services.AddAuthentication(options =>
             },
             OnTokenValidated = context =>
             {
-                Log.Information("JWT token validated successfully for: {Name}", context.Principal.Identity?.Name);
+                var userName = context.Principal?.Identity?.Name ?? "unknown";
+                Log.Information("JWT token validated successfully for: {Name}", userName);
                 return Task.CompletedTask;
             }
         };
@@ -244,6 +284,7 @@ builder.Services.AddAuthentication(options =>
         throw;
     }
 });
+
 
 
 // Serilog setup
@@ -263,6 +304,8 @@ builder.Host.UseSerilog();
 
 Log.Information("Starting web application");
 
+
+
 // Configure host and port for Railway
 var port = builder.Configuration["PORT"] ?? Environment.GetEnvironmentVariable("PORT") ?? "8080";
 builder.WebHost.UseKestrel(options =>
@@ -271,6 +314,8 @@ builder.WebHost.UseKestrel(options =>
 });
 
 Log.Information("Configuring web server to listen on port {Port}", port);
+
+
 
 var app = builder.Build();
 
@@ -283,28 +328,31 @@ if (app.Environment.IsDevelopment())
     }
 }
 
+
+
 // setup Identity Roles
 using (var scope = app.Services.CreateScope())
 {
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<MongoIdentityRole<string>>>();
     var roles = new[] { UserRoles.Admin, UserRoles.User };
 
     foreach (var role in roles)
     {
         if (!await roleManager.RoleExistsAsync(role))
         {
-            await roleManager.CreateAsync(new IdentityRole(role));
+            await roleManager.CreateAsync(new MongoIdentityRole<string>(role));
         }
     }
 }
 
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Social Media API v1");
-        c.RoutePrefix = "swagger";
-    });
 
+
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Social Media API v1");
+    c.RoutePrefix = "swagger";
+});
 app.UseCors("AllowAll");
 app.UseHsts();
 app.UseRouting();

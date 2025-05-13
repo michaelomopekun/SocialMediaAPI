@@ -31,7 +31,7 @@ public class FollowService : IFollowService
         {
             var follow = new Follow
             {
-                Id = int.Parse(Nanoid.Generate(size, length)),
+                Id = Nanoid.Generate(size, length),
                 FollowingUserId = request.ToFollowUserId,
                 FollowerUserId = followerUserId,
                 FollowedAt = DateTime.UtcNow,
@@ -128,7 +128,7 @@ public class FollowService : IFollowService
 
             var follow = new Follow
             {
-                Id = int.Parse(id),
+                Id = id,
                 FollowerUserId = request.FollowerUserId,
                 FollowingUserId = request.FollowingUserId,
                 FollowedAt = DateTime.UtcNow,
