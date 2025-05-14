@@ -59,7 +59,7 @@ SocialMediaAPI is a backend service designed to provide APIs for a social media 
      http://localhost:5149/swagger
      ```
    - Production: 
-     [Swagger API Documentation](https://socialmediaapi-production-74e1.up.railway.app/swagger/index.html)
+     [Swagger API Documentation](https://socialmediaapi-production-1e91.up.railway.app/)
 
 ---
 
