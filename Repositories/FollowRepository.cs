@@ -245,7 +245,7 @@ public class FollowRepository : IFollowRepository
     {
         try
         {
-            var follow = await _follows.Find(f => f.Id.ToString() == id).FirstOrDefaultAsync();
+            var follow = await _follows.Find(f => f.FollowingUserId == id).FirstOrDefaultAsync();
             if (follow == null) return false;
 
             await _follows.DeleteOneAsync(f => f.Id == follow.Id);

@@ -5,13 +5,15 @@ using NanoidDotNet;
 public class FollowService : IFollowService
 {
     private readonly IFollowRepository _followRepository;
+    private readonly IProfileRepository _userRepository;
     private readonly IMapper _mapper;
     private readonly ILogger<FollowService> _logger;
     private const string size = "0123456789";
     private const int length = 8;
 
-    public FollowService(IFollowRepository followRepository, IMapper mapper, ILogger<FollowService> logger)
+    public FollowService(IFollowRepository followRepository, IMapper mapper, ILogger<FollowService> logger, IProfileRepository userRepository)
     {
+        _userRepository = userRepository;
         _followRepository = followRepository;
         _mapper = mapper;
         _logger = logger;
@@ -21,11 +23,27 @@ public class FollowService : IFollowService
     {
         if (request == null)  throw new ArgumentNullException(nameof(request), "Follow cannot be null");
 
+        _logger.LogInformation("AddFollowAsync::Adding follow relationship: {FollowerId} -> {FollowingId}", followerUserId, request.ToFollowUserId);
+        
+        var userExistByFollowingId = await _userRepository.ProfileExistsAsync(request.ToFollowUserId);
+        if (!userExistByFollowingId)
+        {
+            _logger.LogWarning("AddFollowAsync::User does not exist: {UserId}", request.ToFollowUserId);
+            throw new UserNotFoundException(request.ToFollowUserId);
+        }
+
         var existingFollow = await _followRepository.GetFollowByFollowerAndFollowingIdAsync(followerUserId, request.ToFollowUserId);
         if (existingFollow != null)
         {
             return _mapper.Map<FollowResponseDTO>(existingFollow);
         }
+
+        var existingFollowReverse = await _followRepository.GetFollowByFollowerAndFollowingIdAsync(request.ToFollowUserId, followerUserId);
+        if (existingFollowReverse != null)
+        {
+            return _mapper.Map<FollowResponseDTO>(existingFollowReverse);
+        }
+
 
         try
         {
@@ -157,5 +175,15 @@ public class FollowService : IFollowService
             _logger.LogError(ex, "UpdateFollowAsync::Error updating follow: {Message}", ex.Message);
             throw new Exception($"UpdateFollowAsync::Error updating follow: {ex.Message}");
         }
+
+
+    }
+}
+
+public class UserNotFoundException : Exception
+{
+    public UserNotFoundException(string userId)
+        : base($"User with ID '{userId}' does not exist.")
+    {
     }
 }

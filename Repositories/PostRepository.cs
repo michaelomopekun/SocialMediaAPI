@@ -298,7 +298,7 @@ public class PostRepository : IPostRepository
     {
         try
         {
-            var post = await _posts.Find(postId).FirstOrDefaultAsync();
+            var post = await _posts.Find(p => p.Id == postId).FirstOrDefaultAsync();
             if (post == null) return false;
 
             post.LikesCount = (byte)Math.Max(0, (post.LikesCount ?? 0) + count);
@@ -320,7 +320,7 @@ public class PostRepository : IPostRepository
     {
         try
         {
-            var post = await _posts.Find(postId).FirstOrDefaultAsync();
+            var post = await _posts.Find(p => p.Id == postId).FirstOrDefaultAsync();
             if (post == null) return false;
 
             post.CommentsCount = Math.Max(0, (post.CommentsCount ?? 0) + count);
@@ -341,7 +341,7 @@ public class PostRepository : IPostRepository
     {
         try
         {
-            var post = await _posts.Find(postId).FirstOrDefaultAsync();
+            var post = await _posts.Find(p => p.Id == postId).FirstOrDefaultAsync();
             if (post == null) return false;
 
             post.SharesCount = (byte)Math.Max(0, (post.SharesCount ?? 0) + count);

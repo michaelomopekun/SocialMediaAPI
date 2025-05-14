@@ -208,7 +208,7 @@ builder.Services.AddScoped(s =>
     var dbName = Environment.GetEnvironmentVariable("MONGODB_DATABASE_NAME");
     var database = client.GetDatabase(dbName);
 
-    return database.GetCollection<ApplicationUser>("Users");
+    return database.GetCollection<ApplicationUser>("applicationUsers");
 });
 
 

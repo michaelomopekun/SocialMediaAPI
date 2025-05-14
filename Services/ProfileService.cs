@@ -44,9 +44,9 @@ public class ProfileService : IProfileService
             var profileResponse = _mapper.Map<ProfileResponseDTO>(createdProfile);
 
             await _cache.SetAsync(CacheKeys.ProfileById(userId), profileResponse, TimeSpan.FromMinutes(30));
-            await _cache.SetAsync(CacheKeys.ProfileByUserName(createdProfile.UserName), profileResponse, TimeSpan.FromMinutes(30));
+            // await _cache.SetAsync(CacheKeys.ProfileByUserName(createdProfile.UserName), profileResponse, TimeSpan.FromMinutes(30));
 
-            _logger.LogInformation("CreateProfileAsync::Profile created successfully: {UserName}", createdProfile.UserName);
+            // _logger.LogInformation("CreateProfileAsync::Profile created successfully: {UserName}", createdProfile.UserName);
 
             return profileResponse;
         }

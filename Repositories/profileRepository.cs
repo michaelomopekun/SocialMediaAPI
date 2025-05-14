@@ -17,8 +17,17 @@ public class ProfileRepository : IProfileRepository
     {
         try
         {
-            var userProfile = await _users.Find(i => i.Id.ToString() == userId).FirstOrDefaultAsync();
-            if(userProfile == null) return null!;
+            userId = userId.Trim();
+
+            var allIds = await _users.Find(_ => true).ToListAsync();
+            _logger.LogInformation("All user IDs in DB: {Ids}", string.Join(", ", allIds.Select(u => u.Id)));
+
+            var userProfile = await _users.Find(i => i.Id == userId).FirstOrDefaultAsync();
+            if(userProfile == null)
+            {
+                _logger.LogWarning("CreateProfileAsync::User not found for ID: {UserId}", userId);
+                return null!;
+            }
 
             userProfile.Bio = profile.Bio;
             userProfile.DateOfBirth = profile.DateOfBirth;
@@ -32,7 +41,7 @@ public class ProfileRepository : IProfileRepository
                 userProfile.ProfileCompleted = true;
             }
 
-            await _users.UpdateOneAsync(u => u.Id.ToString() == userId, Builders<ApplicationUser>.Update
+            await _users.UpdateOneAsync(u => u.Id == userId, Builders<ApplicationUser>.Update
                 .Set(u => u.Bio, userProfile.Bio)
                 .Set(u => u.DateOfBirth, userProfile.DateOfBirth)
                 .Set(u => u.PhoneNumber, userProfile.PhoneNumber)
@@ -56,7 +65,7 @@ public class ProfileRepository : IProfileRepository
     {
         try
         {
-            var userProfile = await _users.Find(u => u.Id.ToString() == id).FirstOrDefaultAsync();
+            var userProfile = await _users.Find(u => u.Id == id).FirstOrDefaultAsync();
             if (userProfile == null) return false;
 
             userProfile.ProfileIsDeleted = true;
@@ -110,6 +119,7 @@ public class ProfileRepository : IProfileRepository
             if (profile == null || profile.Bio == null || profile.ProfilePictureUrl == null || profile.DateOfBirth == null || profile.Location == null || profile.PhoneNumber == null)
             {
                 _logger.LogWarning("GetProfileByIdAsync::Profile not found or incomplete: {Id}", id);
+                return null;
             }
 
             _logger.LogInformation("GetProfileByIdAsync::Profile retrieved successfully: {Id}", id);
@@ -136,7 +146,7 @@ public class ProfileRepository : IProfileRepository
             if (profile == null || profile.Bio == null || profile.ProfilePictureUrl == null || profile.DateOfBirth == null || profile.Location == null || profile.PhoneNumber == null)
             {
                 _logger.LogWarning("GetProfileByIdAsync::Profile not found or incomplete: {UserName}", userName);
-                return null!;
+                return null;
             }
 
             _logger.LogInformation("GetProfileByUserNameAsync::Profile retrieved successfully: {UserName}", userName);
@@ -156,16 +166,6 @@ public class ProfileRepository : IProfileRepository
         {
             var profileExists = await _users
                                     .Find(u => u.Id.ToString() == userId && u.ProfileIsDeleted == false && (u.ProfileCompleted == true || u.ProfileCompleted == false))
-                                    .Project(u => new ApplicationUser
-                                    {
-                                        Id = u.Id,
-                                        UserName = u.UserName,
-                                        PhoneNumber = u.PhoneNumber,
-                                        ProfilePictureUrl = u.ProfilePictureUrl,
-                                        Bio = u.Bio,
-                                        DateOfBirth = u.DateOfBirth,
-                                        Location = u.Location
-                                    })
                                     .AnyAsync();
 
             if (!profileExists)
@@ -190,7 +190,7 @@ public class ProfileRepository : IProfileRepository
     {
         try
         {
-            var existingProfile = await _users.Find(i => i.Id.ToString() == id).FirstOrDefaultAsync();
+            var existingProfile = await _users.Find(i => i.Id == id).FirstOrDefaultAsync();
             if (existingProfile == null) return null!;
 
             existingProfile.Bio = profile.Bio;

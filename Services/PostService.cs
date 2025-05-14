@@ -67,25 +67,28 @@ public class PostService : IPostService
     {
         try
         {
-            // var cachedFeed = await _cacheService.GetFeedCacheAsync(userId, pageNumber, pageSize);
-            // if (cachedFeed != null)
-            // {
-            //     return cachedFeed;
-            // }
+            var cachedFeed = await _cacheService.GetFeedCacheAsync(userId, pageNumber, pageSize);
+            if (cachedFeed != null)
+            {
+                return cachedFeed;
+            }
 
             var posts = await _postRepository.GetFollowersPostsAsync(userId, pageNumber, pageSize);
             if (!posts.Any())
-            {
-                return Enumerable.Empty<PostResponseDTO>();
-            }
-
-            if(posts == null)
             {
                 var AllNonFollowersPosts = await _postRepository.GetAllPostsAsync(pageNumber, pageSize);
                 if (AllNonFollowersPosts == null) return null!;
                 
                 posts = AllNonFollowersPosts;
             }
+
+            // if(posts == null)
+            // {
+            //     var AllNonFollowersPosts = await _postRepository.GetAllPostsAsync(pageNumber, pageSize);
+            //     if (AllNonFollowersPosts == null) return null!;
+            //
+            //     posts = AllNonFollowersPosts;
+            // }
 
             var now = DateTime.UtcNow;
             var scoredPosts = await Task.WhenAll(posts.Select(async post => new
