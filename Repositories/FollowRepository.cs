@@ -1,20 +1,20 @@
-
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using SocialMediaAPI.Data;
+using MongoDB.Driver;
 
 public class FollowRepository : IFollowRepository
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IMongoCollection<Follow> _follows;
+    private readonly IMongoCollection<ApplicationUser> _users;
     private readonly ILogger<FollowRepository> _logger;
     private readonly IMemoryCache _cache;
     private const int CACHE_DURATION = 10;
 
-    public FollowRepository(ApplicationDbContext context, ILogger<FollowRepository> logger, IMemoryCache cache)
+    public FollowRepository(ILogger<FollowRepository> logger, IMemoryCache cache, IMongoCollection<Follow> follows, IMongoCollection<ApplicationUser> users)
     {
-        _context = context;
         _logger = logger;
         _cache = cache;
+        _follows = follows;
+        _users = users;
     }
 
 
@@ -22,8 +22,7 @@ public class FollowRepository : IFollowRepository
     {
         try
         {
-            await _context.Follows.AddAsync(follow);
-            await _context.SaveChangesAsync();
+            await _follows.InsertOneAsync(follow);
 
             _cache.Remove($"followers-{follow.FollowingUserId}-page-1-10");
             _cache.Remove($"following-{follow.FollowerUserId}-page-1-10");
@@ -42,12 +41,12 @@ public class FollowRepository : IFollowRepository
     {
         try
         {
-            var blockedUser = _context.Follows.FirstOrDefault(f => f.FollowerUserId == blockedUserId && f.FollowingUserId == userId);
+            var blockedUser = await _follows.Find(f => f.FollowerUserId == blockedUserId && f.FollowingUserId == userId).FirstOrDefaultAsync();
 
             if (blockedUser == null) return false;
         
             blockedUser.IsBlocked = true;
-            await _context.SaveChangesAsync();
+            await _follows.ReplaceOneAsync(f => f.Id == blockedUser.Id, blockedUser);
 
             return true;
         }
@@ -61,7 +60,9 @@ public class FollowRepository : IFollowRepository
 
     public async Task<bool> FollowExistsAsync(string id)
     {
-        return await _context.Follows.AnyAsync(f => f.FollowerUserId == id || f.FollowingUserId == id);
+        var counts = await _follows.CountDocumentsAsync(f => f.FollowerUserId == id || f.FollowingUserId == id);
+
+        return (int)counts > 0;
     }
 
     public async Task<IEnumerable<Follow>> GetBlockedUsersAsync(string userId, int pageNumber = 1, int pageSize = 10)
@@ -72,10 +73,10 @@ public class FollowRepository : IFollowRepository
         {
             try
             {
-                blockedUsers = await _context.Follows
-                    .Where(f => f.FollowingUserId == userId && f.IsBlocked)
+                blockedUsers = await _follows
+                    .Find(f => f.FollowingUserId == userId && f.IsBlocked)
                     .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
+                    .Limit(pageSize)
                     .ToListAsync();
 
                 var cacheOptions = new MemoryCacheEntryOptions()
@@ -91,16 +92,16 @@ public class FollowRepository : IFollowRepository
                 throw;
             }
         }
-        return Enumerable.Empty<Follow>();
+        return blockedUsers ?? Enumerable.Empty<Follow>();
     }
 
     public async Task<Follow> GetFollowByFollowerAndFollowingIdAsync(string followerId, string followingId)
     {
         try
         {
-            var follow = await _context.Follows
-                .FirstOrDefaultAsync(f => f.FollowerUserId == followerId && 
-                                        f.FollowingUserId == followingId);
+            var follow = await _follows
+                .Find(f => f.FollowerUserId == followerId &&
+                      f.FollowingUserId == followingId).FirstOrDefaultAsync();
  
             return follow;
         }
@@ -116,10 +117,10 @@ public class FollowRepository : IFollowRepository
         try
         {
 
-            return await _context.Follows
-                .Where(f => f.FollowingUserId == userId && !f.IsBlocked)
+            return await _follows
+                .Find(f => f.FollowingUserId == userId && !f.IsBlocked)
                 .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
+                .Limit(pageSize)
                 .ToListAsync();
         }
         catch (Exception ex)
@@ -129,11 +130,12 @@ public class FollowRepository : IFollowRepository
         }
     }
 
-    public Task<int> GetFollowersCountAsync(string userId)
+    public async Task<int> GetFollowersCountAsync(string userId)
     {
         try
         {
-            return _context.Follows.CountAsync(f => f.FollowingUserId == userId && !f.IsBlocked);
+            var counts = await _follows.CountDocumentsAsync(f => f.FollowingUserId == userId && !f.IsBlocked);
+            return (int)counts;
         }
         catch (Exception ex)
         {
@@ -146,10 +148,10 @@ public class FollowRepository : IFollowRepository
     {
         try
         {
-            return await _context.Follows
-                .Where(f => f.FollowerUserId == userId && !f.IsBlocked)
+            return await _follows
+                .Find(f => f.FollowerUserId == userId && !f.IsBlocked)
                 .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
+                .Limit(pageSize)
                 .ToListAsync();
         }
         catch (Exception ex)
@@ -159,11 +161,12 @@ public class FollowRepository : IFollowRepository
         }
     }
 
-    public Task<int> GetFollowingCountAsync(string userId)
+    public async Task<int> GetFollowingCountAsync(string userId)
     {
         try
         {
-            return _context.Follows.CountAsync(f => f.FollowerUserId == userId && !f.IsBlocked);
+            var count = await _follows.CountDocumentsAsync(f => f.FollowerUserId == userId && !f.IsBlocked);
+            return (int)count;
         }
         catch (Exception ex)
         {
@@ -176,10 +179,10 @@ public class FollowRepository : IFollowRepository
     {
         try
         {
-            return await _context.Follows
-                .Where(f => f.FollowerUserId == userId1 && f.FollowingUserId == userId2 && !f.IsBlocked)
+            return await _follows
+                .Find(f => f.FollowerUserId == userId1 && f.FollowingUserId == userId2 && !f.IsBlocked)
                 .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
+                .Limit(pageSize)
                 .ToListAsync();
         }
         catch (Exception ex)
@@ -193,8 +196,8 @@ public class FollowRepository : IFollowRepository
     {
         try
         {
-            return await _context.Follows
-                .Where(f => f.FollowerUserId == userId && f.FollowingUserId == blockedUserId && f.IsBlocked)
+            return await _follows
+                .Find(f => f.FollowerUserId == userId && f.FollowingUserId == blockedUserId && f.IsBlocked)
                 .AnyAsync();
         }
         catch (Exception ex)
@@ -208,8 +211,8 @@ public class FollowRepository : IFollowRepository
     {
         try
         {
-            return await _context.Follows
-                .Where(f => f.FollowingUserId == followingId && f.FollowerUserId == followerId && !f.IsBlocked)
+            return await _follows
+                .Find(f => f.FollowingUserId == followingId && f.FollowerUserId == followerId && !f.IsBlocked)
                 .AnyAsync();
         }
         catch(Exception ex)
@@ -223,11 +226,11 @@ public class FollowRepository : IFollowRepository
     {
         try
         {
-            var blockedUser = await _context.Follows.FirstOrDefaultAsync(f => f.FollowerUserId == blockedUserId && f.FollowingUserId == userId);
+            var blockedUser = await _follows.Find(f => f.FollowerUserId == blockedUserId && f.FollowingUserId == userId).FirstOrDefaultAsync();
             if (blockedUser == null) return false;
         
             blockedUser.IsBlocked = false;
-            await _context.SaveChangesAsync();
+            await _follows.ReplaceOneAsync(f => f.Id == blockedUser.Id, blockedUser);
 
             return true;
         }
@@ -242,11 +245,10 @@ public class FollowRepository : IFollowRepository
     {
         try
         {
-            var follow = await _context.Follows.FirstAsync(f => f.Id.ToString() == id);
+            var follow = await _follows.Find(f => f.FollowingUserId == id).FirstOrDefaultAsync();
             if (follow == null) return false;
-        
-            _context.Follows.Remove(follow);
-            await _context.SaveChangesAsync();
+
+            await _follows.DeleteOneAsync(f => f.Id == follow.Id);
 
             return true;
         }
@@ -257,11 +259,11 @@ public class FollowRepository : IFollowRepository
         }
     }
 
-    public async Task<Follow> UpdateFollowAsync(string id, Follow follow)
+    public async Task<Follow?> UpdateFollowAsync(string id, Follow follow)
     {
         try
         {
-            var follows = await _context.Follows.FindAsync(id);
+            var follows = await _follows.Find(f => f.Id == id).FirstOrDefaultAsync();
             if (follows == null) return null;
 
             follows.IsBlocked = follow.IsBlocked;
@@ -269,8 +271,7 @@ public class FollowRepository : IFollowRepository
             follows.FollowingUserId = follow.FollowingUserId;
             follows.FollowedAt = follow.FollowedAt;
 
-            _context.Follows.Update(follows);
-            await _context.SaveChangesAsync();
+            await _follows.ReplaceOneAsync(f => f.Id == follows.Id, follows);
 
             return follows;
 

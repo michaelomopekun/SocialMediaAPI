@@ -1,60 +1,118 @@
-using System.ComponentModel.DataAnnotations.Schema;
-using SocialMediaAPI.Models.Domain.User;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 public class Post
 {
-    [DatabaseGenerated(DatabaseGeneratedOption.None)]
+    [BsonId]
     public string Id {get;set;} = string.Empty;
+    
+    [BsonElement("content")]
     public string? Content {get;set;}
+    
+    [BsonElement("imageUrl")]
     public string? ImageUrl {get;set;}
+    
+    [BsonElement("createdAt")]
     public DateTime CreatedAt {get;set;}
+    
+    [BsonElement("updatedAt")]
     public DateTime UpdatedAt {get;set;}
+    
+    [BsonElement("userId")]
     public string UserId {get;set;} = string.Empty;
+    
+    [BsonElement("likesCount")]
     public int? LikesCount {get;set;}
+    
+    [BsonElement("commentsCount")]
     public int? CommentsCount {get;set;}
+    
+    [BsonElement("sharesCount")]
     public int? SharesCount {get;set;}
-    public ApplicationUser? User {get;set;}
-    public ICollection<Comment>? Comments {get;set;}
-    public ICollection<Like>? Likes {get;set;}
-    public ICollection<Share>? Shares {get;set;}
+    
 }
 
 
 public class Comment
 {
-    [DatabaseGenerated(DatabaseGeneratedOption.None)]
+    [BsonId]
     public string Id {get;set;} = string.Empty;
+
+    [BsonElement("content")]
     public string? Content {get;set;}
+    
+    [BsonElement("createdAt")]
     public DateTime CreatedAt {get;set;}
+    
+    [BsonElement("updatedAt")]
     public DateTime? UpdatedAt {get;set;}
+    
+    [BsonElement("postId")]
     public string PostId {get;set;} = string.Empty;
+    
+    [BsonElement("userId")]
     public string UserId {get;set;} = string.Empty;
+
+    [BsonElement("repliedUserId")]
+     
     public string? RepliedUserId {get;set;}
-    public Post? Post {get;set;}
-    public ApplicationUser? User {get;set;}
-    public ICollection<Like>? Likes {get;set;}
 }
 
 
 public class Like
 {
+    [BsonId]
+     
     public string Id {get;set;} = string.Empty;
+
+    [BsonElement("createdAt")]
     public DateTime CreatedAt {get;set;}
+
+    [BsonElement("postId")]
+     
     public string PostId {get;set;} = string.Empty;
+
+    [BsonElement("userId")]
+     
     public string UserId {get;set;} = string.Empty;
+
+    [BsonElement("commentId")]
+     
     public string? CommentId {get;set;}
-    public LikeType Type {get;set;}
-    public ReactionType Reaction {get;set;}
-    public Post? Post {get;set;}
-    public Comment? Comment {get;set;}
-    public ApplicationUser? User {get;set;}
+
+    [BsonElement("type")]
+    public LikeType Type { get; set; }
+
+    [BsonElement("reaction")]
+    public ReactionType Reaction { get; set; }
+
 }
+
+public class Share
+{
+    [BsonId]
+     
+    public string Id {get;set;} = string.Empty;
+
+    [BsonElement("createdAt")]
+    public DateTime CreatedAt {get;set;}
+
+    [BsonElement("postId")]
+     
+    public string PostId {get;set;} = string.Empty;
+
+    [BsonElement("userId")]
+     
+    public string UserId {get;set;} = string.Empty;
+}
+
 
 public enum LikeType
 {
     Post = 1,
     Comment = 2
 }
+
 
 public enum ReactionType
 {
@@ -68,13 +126,3 @@ public enum ReactionType
     Care = 8
 }
 
-
-public class Share
-{
-    public string Id {get;set;} = string.Empty;
-    public DateTime CreatedAt {get;set;}
-    public string PostId {get;set;} = string.Empty;
-    public string UserId {get;set;} = string.Empty;
-    public Post? Post {get;set;}
-    public ApplicationUser? User {get;set;}
-}

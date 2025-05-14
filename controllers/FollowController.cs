@@ -82,6 +82,11 @@ public class FollowController : ControllerBase
                 return Unauthorized("User not authenticated.");
             }
 
+            if(request.ToFollowUserId == currentUserId)
+            {
+                return BadRequest("Users cannot follow themselves.");
+            }
+
             var follow = await _followService.AddFollowAsync(request, currentUserId);
             if (follow == null)
             {
@@ -90,6 +95,10 @@ public class FollowController : ControllerBase
 
             return CreatedAtAction(nameof(GetFollowers), new { userId = request.ToFollowUserId },
                 new { Status = "Success", Message = "Successfully followed user", Data = follow });
+        }
+        catch (UserNotFoundException)
+        {
+            return NotFound("Cant follow a user that does not exist.");
         }
         catch (Exception ex)
         {
@@ -110,6 +119,11 @@ public class FollowController : ControllerBase
             if (string.IsNullOrEmpty(currentUserId))
             {
                 return Unauthorized("User not authenticated.");
+            }
+
+            if(currentUserId == id)
+            {
+                return BadRequest("Users cannot unfollow or follow themselves.");
             }
 
             var unfollowed = await _followService.UnFollowAsync(id);

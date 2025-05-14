@@ -1,5 +1,3 @@
-using SocialMediaAPI.Models.Domain;
-
 namespace SocialMediaAPI.Repositories;
 
 public interface ILikeRepository

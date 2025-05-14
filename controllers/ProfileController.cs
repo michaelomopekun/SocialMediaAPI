@@ -1,7 +1,8 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class ProfileController : ControllerBase
@@ -47,7 +48,7 @@ public class ProfileController : ControllerBase
         }
     }
 
-    [HttpGet("{userId}")]
+    [HttpGet("profile/{userId}")]
     [ProducesResponseType(typeof(ProfileResponseDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
@@ -120,14 +121,15 @@ public class ProfileController : ControllerBase
         }
     }
 
-    [HttpGet("username/{userName}")]
+    [HttpGet("username")]
     [ProducesResponseType(typeof(ProfileResponseDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetProfileByUserName(string userName)
+    public async Task<IActionResult> GetProfileByUserName([FromQuery]string? userName)
     {
         try
         {
+            if(string.IsNullOrEmpty(userName)) return BadRequest(new { status = "Error", Message = "User name is required>>>>>>>>>>>>>>.." });
             var profile = await _profileService.GetProfileByUserNameAsync(userName);
             
             if (profile == null) return NotFound(new { status = "Error", Message = "Profile not found." });

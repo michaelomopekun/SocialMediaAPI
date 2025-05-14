@@ -128,6 +128,6 @@ public class FeedScoreCalculator
 
     public class ScoredPost
     {
-        public Post Post { get; set; }
+        public Post? Post { get; set; }
         public double Score { get; set; }
     }

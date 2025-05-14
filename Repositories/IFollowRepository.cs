@@ -8,7 +8,7 @@ public interface IFollowRepository
     
     Task<Follow> AddFollowAsync(Follow follow);
     
-    Task<Follow> UpdateFollowAsync(string id, Follow follow);
+    Task<Follow?> UpdateFollowAsync(string id, Follow follow);
     
     Task<bool> UnFollowAsync(string id);
     

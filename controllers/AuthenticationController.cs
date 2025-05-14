@@ -6,8 +6,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using NanoidDotNet;
 using SocialMediaAPI.Constants;
-using SocialMediaAPI.Models.Domain.User;
 using Microsoft.AspNetCore.Authorization;
+using System.Drawing;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -17,7 +17,7 @@ public class AuthenticationController : ControllerBase
     private const string LowercaseLetters = "abcdefghijklmnopqrstuvwxyz";
     private const string Numbers = "0123456789";
     private const string SpecialCharacters = "!@#$%^&*()_+-=[]{}|;:,.<>?";
-    private const string NanoidSize = UppercaseLetters + LowercaseLetters + Numbers;
+    private const string GuidSize = UppercaseLetters + LowercaseLetters + Numbers;
 
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<AuthenticationController> _logger;
@@ -64,7 +64,7 @@ public class AuthenticationController : ControllerBase
 
             var user = new ApplicationUser()
             {
-                Id = Nanoid.Generate(NanoidSize, 7),
+                Id = Nanoid.Generate(GuidSize, 8),
                 FirstName = register.FirstName,
                 LastName = register.LastName,
                 UserName = register.UserName,
@@ -291,7 +291,7 @@ public class AuthenticationController : ControllerBase
             if (string.IsNullOrEmpty(userId)) return BadRequest(new { Status = "Error", Message = "User not found" });
 
             // Clear session
-            HttpContext.Session.Clear();
+            await Task.Run(() => HttpContext.Session.Clear());
 
             _logger.LogInformation("User {UserId} logged out successfully", userId);
 
@@ -303,4 +303,4 @@ public class AuthenticationController : ControllerBase
             return StatusCode(500, new { Status = "Error", Message = "Error during logout", ErrorMessage = ex.Message });
         }
     }
-}    
+}

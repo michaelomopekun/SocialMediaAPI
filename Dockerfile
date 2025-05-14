@@ -11,9 +11,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:6.0
 WORKDIR /app
 COPY --from=build /src/out .
 
-ENV ASPNETCORE_URLS=http://+:${PORT:-8080}
+ENV ASPNETCORE_URLS=http://+:${PORT:-5002}
 ENV ASPNETCORE_ENVIRONMENT=Production
 
-EXPOSE ${PORT:-8080}
+EXPOSE ${PORT:-5002}
 
 ENTRYPOINT ["dotnet", "SocialMediaAPI.dll"]
