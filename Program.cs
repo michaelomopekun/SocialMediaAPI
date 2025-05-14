@@ -173,7 +173,7 @@ builder.Services.AddIdentity<ApplicationUser, MongoIdentityRole<string>>(options
 builder.Services.AddScoped(s =>
 {
     var client = s.GetRequiredService<IMongoClient>();
-    var dbName = Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING");
+    var dbName = Environment.GetEnvironmentVariable("MONGODB_DATABASE_NAME");
     var database = client.GetDatabase(dbName);
 
     return database.GetCollection<Post>("Posts");
@@ -181,7 +181,7 @@ builder.Services.AddScoped(s =>
 builder.Services.AddScoped(s =>
 {
     var client = s.GetRequiredService<IMongoClient>();
-    var dbName = Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING");
+    var dbName = Environment.GetEnvironmentVariable("MONGODB_DATABASE_NAME");
     var database = client.GetDatabase(dbName);
 
     return database.GetCollection<Comment>("Comments");
@@ -189,7 +189,7 @@ builder.Services.AddScoped(s =>
 builder.Services.AddScoped(s =>
 {
     var client = s.GetRequiredService<IMongoClient>();
-    var dbName = Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING");
+    var dbName = Environment.GetEnvironmentVariable("MONGODB_DATABASE_NAME");
     var database = client.GetDatabase(dbName);
 
     return database.GetCollection<Like>("Likes");
@@ -197,7 +197,7 @@ builder.Services.AddScoped(s =>
 builder.Services.AddScoped(s =>
 {
     var client = s.GetRequiredService<IMongoClient>();
-    var dbName = Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING");
+    var dbName = Environment.GetEnvironmentVariable("MONGODB_DATABASE_NAME");
     var database = client.GetDatabase(dbName);
 
     return database.GetCollection<Follow>("Follows");
@@ -205,7 +205,7 @@ builder.Services.AddScoped(s =>
 builder.Services.AddScoped(s =>
 {
     var client = s.GetRequiredService<IMongoClient>();
-    var dbName = Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING");
+    var dbName = Environment.GetEnvironmentVariable("MONGODB_DATABASE_NAME");
     var database = client.GetDatabase(dbName);
 
     return database.GetCollection<ApplicationUser>("Users");
