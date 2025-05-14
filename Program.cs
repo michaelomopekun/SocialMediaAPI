@@ -146,7 +146,6 @@ builder.Services.AddCors(options =>
 });
 
 
-
 //MongoDB configuration
 builder.Services.AddSingleton<IMongoClient>(s =>
 {
